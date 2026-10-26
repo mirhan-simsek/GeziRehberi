@@ -1,0 +1,40 @@
+// ANTALYA. Mekan adları yemek.com listelerinden. ap:1 = konum semt düzeyinde yaklaşık.
+// Yemek
+P({c:"ant",n:"Börekçi Tevfik",cat:"yemek",s:"bt",d:1,k:1,se:"iysk",w:"scaf",ar:"Kaleiçi çevresi",nh:0,note:"Serpme böreği, kıymalı-maydanozlu ve lor peynirli börek. Sabah kahvaltısı için.",eat:"Serpme böreği, kıymalı maydanozlu börek, lor peynirli börek",ll:[36.8880,30.7020],ap:1});
+P({c:"ant",n:"Meşhur 18’in Bağaçaları",cat:"yemek",s:"bt",d:0.5,k:1,se:"iysk",w:"scaf",ar:"Elmalı",nh:1,note:"Bağaça, Antalya’ya özgü yağlı bir hamur işi.",eat:"Bağaça",ll:[36.8920,30.7030],ap:1});
+P({c:"ant",n:"Brezel & More",cat:"yemek",s:"bt",d:1,k:2,se:"iysk",w:"scf",ar:"Fener",nh:0,note:"Alman usulü brezel, kruvasan ve ekşi mayalı ekmekler.",eat:"Brezel, kruvasan, ekşi mayalı hamur işleri, kahve",ll:[36.8800,30.7200],ap:1});
+P({c:"ant",n:"Luna Garden",cat:"yemek",s:"b",d:1.5,k:2,se:"iysk",w:"scf",ar:"Barbaros",nh:0,note:"Yumurta, tost ve serpme kahvaltı.",eat:"Serpme kahvaltı, yumurta, tost",ll:[36.8850,30.6950],ap:1});
+P({c:"ant",n:"Pablito Bistro",cat:"yemek",s:"b",d:1.5,k:2,se:"iysk",w:"scf",ar:"Lara",nh:0,note:"Lara Caddesi’nde serpme kahvaltı ve hafif tabaklar.",eat:"Serpme kahvaltı, omlet, granola",ll:[36.8780,30.7550],ap:1});
+P({c:"ant",n:"Airi Coffee Bistro",cat:"yemek",s:"b",d:1.5,k:2,se:"iysk",w:"scf",ar:"Lara",nh:0,note:"Akdeniz tabağı ve protein kahvaltısı.",eat:"Serpme kahvaltı, Akdeniz tabağı, omlet, kruvasan",ll:[36.8780,30.7570],ap:1});
+P({c:"ant",n:"La Bohem Beach",cat:"yemek,huzur",s:"b",d:2,k:2,se:"iys",w:"scf",ar:"Konyaaltı",nh:0,note:"Konyaaltı plajında kahvaltı. Kahvaltı sonrası deniz için uygun.",eat:"Serpme kahvaltı, omlet, granola, kruvasan",ll:[36.8550,30.6300],ap:1});
+P({c:"ant",n:"AL-YA Gözleme ve Köy Kahvaltısı",cat:"yemek",s:"b",d:1.5,k:1,se:"iysk",w:"scaf",ar:"Konyaaltı",nh:1,note:"Gözleme ve bazlama, sosyete pazarı mesire alanında.",eat:"Gözleme, bazlama, börek, serpme kahvaltı",ll:[36.8900,30.6300],ap:1});
+P({c:"ant",n:"Bahçelara Kahvaltı Çiftliği",cat:"yemek",s:"b",d:2,k:2,se:"iys",w:"scaf",ar:"Fener",nh:1,note:"Ev yapımı reçeller ve doğal ürünler.",eat:"Serpme kahvaltı, ev yapımı reçeller",ll:[36.8800,30.7250],ap:1});
+P({c:"ant",n:"Balamir Cafe & Restaurant",cat:"yemek",s:"b",d:1.5,k:2,se:"iysk",w:"scaf",ar:"Beldibi",nh:1,note:"Kemer yolu üzerinde geleneksel kahvaltı tabağı.",eat:"Geleneksel kahvaltı tabağı, taze sıkılmış meyve suyu",ll:[36.7090,30.5660],ap:1});
+P({c:"ant",n:"Piyazcı Ahmet",cat:"yemek",s:"ld",d:1,k:1,se:"iysk",w:"scaf",ar:"Altındağ",nh:0,note:"Antalya piyazı tahin sosla yenir. Şiş köfte ve kabak tatlısı da var.",eat:"Antalya piyazı, şiş köfte, ızgara köfte, kabak tatlısı",ll:[36.9050,30.7000],ap:1});
+P({c:"ant",n:"Topçu Kebap",cat:"yemek",s:"ld",d:1,k:1,se:"iysk",w:"scaf",ar:"Elmalı",nh:0,note:"Şiş köfte, piyaz ve döner.",eat:"Şiş köfte, piyaz, döner",ll:[36.8920,30.7050],ap:1});
+P({c:"ant",n:"Şişçi İbo",cat:"yemek",s:"ld",d:1,k:1,se:"iysk",w:"scaf",ar:"Arapsuyu",nh:0,note:"Şiş köfte, Antalya piyazı, manda yoğurdu ve kadayıf tatlısı.",eat:"Şiş köfte, Antalya piyazı, manda yoğurdu, fırın sütlaç, kadayıf",ll:[36.8800,30.6500],ap:1});
+P({c:"ant",n:"Volkan Şişçi Kadir’in Yeri",cat:"yemek",s:"ld",d:1,k:1,se:"iysk",w:"scaf",ar:"Kepez",nh:1,note:"Tahinli piyaz, şiş köfte ve kuzu şiş. Kabak tatlısıyla biter.",eat:"Tahinli Antalya piyazı, şiş köfte, kuzu şiş, cacık, kabak tatlısı",ll:[36.9300,30.7100],ap:1});
+P({c:"ant",n:"7 Mehmet",cat:"yemek",s:"d",d:2,k:3,se:"iysk",w:"scaf",ar:"Meltem",nh:0,note:"Antalya’nın köklü restoranlarından biri. Rezervasyon yapın.",eat:"Antalya mutfağı, ızgaralar, deniz ürünleri",ll:[36.8830,30.6700],ap:1});
+P({c:"ant",n:"Can Can Pide Yemek Salonu",cat:"yemek",s:"l",d:1,k:1,se:"iysk",w:"scaf",ar:"Muratpaşa",nh:1,note:"Anne yemekleri ve pideler. Öğle esnafının tercihi.",eat:"Pide, ev yemekleri",ll:[36.8900,30.7000],ap:1});
+P({c:"ant",n:"Sade Patisserie",cat:"yemek",s:"t",d:0.5,k:2,se:"iysk",w:"scf",ar:"Yeşilbahçe",nh:0,note:"Kruvasan, pasta, ekler ve tart. Kahve molası.",eat:"Kruvasan, ekler, profiterol, tart, Paris-Brest",ll:[36.8900,30.7100],ap:1});
+// Gezilecek yerler
+P({c:"ant",n:"Kaleiçi ve Hadrian Kapısı",cat:"tarih",s:"ma",d:2.5,k:0,se:"iysk",w:"scaf",ar:"Kaleiçi",nh:0,note:"Dar sokaklar ve Yivli Minare. Sabahları sakin.",ll:[36.8884,30.7077],ap:1});
+P({c:"ant",n:"Hıdırlık Kulesi ve Kaleiçi Yat Limanı",cat:"huzur",s:"ae",d:1.5,k:0,se:"iysk",w:"scaf",ar:"Kaleiçi",nh:0,note:"Gün batımında limanı ve Toroslar’ı izleyin.",ll:[36.8850,30.7020],ap:1});
+P({c:"ant",n:"Antalya Müzesi",cat:"tarih",s:"a",d:2.5,k:2,se:"iysk",w:"scaf",ar:"Konyaaltı",nh:0,note:"Perge heykelleri ve Likya buluntuları. Yağmurlu günler için iyi.",ll:[36.8860,30.6790],ap:1});
+P({c:"ant",n:"Konyaaltı Sahili",cat:"huzur",s:"a",d:2.5,k:0,se:"iys",w:"scaf",ar:"Konyaaltı",nh:0,note:"Çakıl plaj ve Toroslar manzarası. Yazın kalabalık.",ll:[36.8600,30.6500],ap:1});
+P({c:"ant",n:"Antalya Akvaryum",cat:"doga",s:"a",d:2.5,k:2,se:"iysk",w:"caf",ar:"Konyaaltı",nh:0,note:"Tünel akvaryum. Çocuklar ve yağmurlu günler için.",ll:[36.8570,30.6370],ap:1});
+P({c:"ant",n:"Üst Düden Şelalesi",cat:"doga",s:"ma",d:1.5,k:1,se:"iysk",w:"scaf",ar:"Düden",nh:0,note:"Park içinde şelale, çay bahçeleri çevrede.",ll:[36.9638,30.7267]});
+P({c:"ant",n:"Alt Düden Şelalesi",cat:"doga",s:"ae",d:1,k:1,se:"iysk",w:"scaf",ar:"Lara",nh:0,note:"Denize dökülen şelale. Manzara noktası gün batımında güzel.",ll:[36.8510,30.7834]});
+P({c:"ant",n:"Kurşunlu Şelalesi Tabiat Parkı",cat:"doga",s:"m",d:2,k:1,se:"iys",w:"scaf",ar:"Kurşunlu",nh:1,note:"Orman içinde gölet ve şelale. Hafta sonları kalabalık.",ll:[37.0030,30.8210]});
+P({c:"ant",n:"Perge Antik Kenti",cat:"tarih",s:"m",d:2,k:2,se:"iysk",w:"scaf",ar:"Perge–Aspendos",nh:0,note:"Stadyum ve sütunlu cadde. Antalya Müzesi’ndeki heykellerle birlikte düşünün.",ll:[36.9614,30.8539]});
+P({c:"ant",n:"Aspendos Antik Tiyatrosu",cat:"tarih",s:"a",d:1.5,k:2,se:"iysk",w:"scaf",ar:"Perge–Aspendos",nh:0,note:"En iyi korunmuş Roma tiyatrolarından biri. Akustiği etkileyici.",ll:[36.9389,31.1722]});
+P({c:"ant",n:"Side Antik Kenti",cat:"tarih,huzur",s:"mae",d:2.5,k:2,se:"iysk",w:"scaf",ar:"Side",nh:0,note:"Gün batımında deniz kıyısındaki Apollon Tapınağı siluetini izleyin.",ll:[36.7667,31.3889]});
+P({c:"ant",n:"Manavgat Şelalesi",cat:"doga",s:"a",d:1.5,k:1,se:"iysk",w:"scaf",ar:"Side",nh:0,note:"Kısa ve rahat bir durak. Nehirde tekne gezisi seçeneği var.",ll:[36.7860,31.4450],ap:1});
+P({c:"ant",n:"Olympos Antik Kenti",cat:"tarih,doga",s:"ma",d:2.5,k:1,se:"iys",w:"scaf",ar:"Olympos–Çıralı",nh:1,note:"Ormanın içindeki kalıntılar sahile iner.",ll:[36.3969,30.4744],ap:1});
+P({c:"ant",n:"Yanartaş (Çıralı)",cat:"macera,doga",s:"e",d:2.5,k:1,se:"iysk",w:"scaf",ar:"Olympos–Çıralı",nh:1,note:"Kayalardan sürekli yanan doğal alevler. Gece yürüyüşü için fener ve sağlam ayakkabı.",ll:[36.4150,30.4745],ap:1});
+P({c:"ant",n:"Phaselis Antik Kenti",cat:"tarih,doga",s:"ma",d:2.5,k:1,se:"iysk",w:"scaf",ar:"Kemer–Phaselis",nh:1,note:"Üç limanlı antik kent çam ormanı içinde. Koylarında yüzülebilir.",ll:[36.5236,30.5522]});
+P({c:"ant",n:"Termessos",cat:"tarih,doga,macera",s:"m",d:3.5,k:2,se:"isk",w:"scaf",ar:"Termessos",nh:1,note:"Güllük Dağı yamacında fethedilemeyen kent. Yol dik, yazın çok sıcak.",ll:[36.9825,30.4647]});
+P({c:"ant",n:"Kekova ve Batık Şehir Tekne Turu",cat:"doga,tarih",s:"m",d:5,k:2,se:"iys",w:"scaf",ar:"Kekova–Kaş",nh:0,note:"Simena Kalesi ve su altında kalan Likya yerleşimi. Sakin havada daha güzel.",ll:[36.1806,29.8778]});
+P({c:"ant",n:"Patara Plajı ve Antik Kenti",cat:"doga,tarih",s:"a",d:3,k:1,se:"iys",w:"scaf",ar:"Patara",nh:1,note:"Yaklaşık 18 km kumsal ve Likya Birliği meclis binası kalıntıları.",ll:[36.2639,29.3139],ap:1});
+P({c:"ant",n:"Köprülü Kanyon Rafting",cat:"macera",s:"m",d:4,k:2,se:"iys",w:"scf",ar:"Köprülü Kanyon",nh:0,note:"Köprüçay’da ilkbahar ve yaz aylarında. Seviye su düzeyine bağlıdır.",ll:[37.1922,31.1808]});
+P({c:"ant",n:"Portakal Hasadı ve Taze Sıkma",cat:"doga,yemek",s:"m",d:2,k:1,se:"k",w:"scaf",ar:"Konyaaltı",nh:1,note:"Kış aylarında portakal hasadı. Bahçe ve pazar ziyareti.",ll:[36.9000,30.6500],ap:1,mon:[11,12,1,2,3]});

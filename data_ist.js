@@ -1,0 +1,48 @@
+// İSTANBUL. Kahvaltı mekanları yemek.com listesinden, diğer yemek mekanları bilinen köklü adreslerden. ap:1 = konum semt düzeyinde yaklaşık.
+// Kahvaltı ve fırın
+P({c:"ist",n:"Emirgan Sütiş",cat:"yemek,huzur",s:"b",d:2,k:2,se:"iysk",w:"scaf",ar:"Emirgan",nh:0,note:"Boğaz’a bakan geniş bahçe. Hafta sonu kalabalık olur, erken gidin.",eat:"Menemen, kol böreği, su böreği, manda kaymağı, bal",ll:[41.1100,29.0560],ap:1});
+P({c:"ist",n:"Hidden Coffee House",cat:"yemek",s:"b",d:1.5,k:2,se:"iysk",w:"scf",ar:"Bebek",nh:0,note:"Bebek’te poşe yumurta, mücver ve menemen.",eat:"Avokadolu poşe yumurta, menemen, mücver, çılbır",ll:[41.0780,29.0430],ap:1});
+P({c:"ist",n:"Simba Boyoz",cat:"yemek",s:"bt",d:1,k:1,se:"iysk",w:"scaf",ar:"Bakırköy",nh:1,note:"İzmir’in boyozu İstanbul’da. Sade, kaşarlı, patlıcanlı çeşitleri.",eat:"Boyoz, haşlanmış yumurta, bal, reçel",ll:[40.9800,28.8700],ap:1});
+P({c:"ist",n:"Kovan Fırın",cat:"yemek",s:"bt",d:1,k:1,se:"iysk",w:"scaf",ar:"Şişli",nh:0,note:"Poğaça, simit ve hamur işleri. Hızlı kahvaltı için.",eat:"Kaşarlı poğaça, simit, serpme kahvaltı",ll:[41.0480,28.9930],ap:1});
+P({c:"ist",n:"Parodia Coffee House & Bistro",cat:"yemek",s:"b",d:1.5,k:2,se:"iysk",w:"scf",ar:"Beşiktaş",nh:0,note:"Ihlamurdere Caddesi’nde ekşi mayalı ekmek ve sahanda yumurta kahvaltısı.",eat:"Dana sosis, sahanda yumurta, ekşi mayalı ekmek, filtre kahve",ll:[41.0480,29.0050],ap:1});
+P({c:"ist",n:"Van Kahvaltı Evi",cat:"yemek",s:"b",d:1.5,k:2,se:"iysk",w:"scaf",ar:"Cihangir",nh:0,note:"Van usulü kahvaltı tabakları ve otlu peynir. Hafta sonu sıra olabilir.",eat:"Otlu peynir, kaymak, bal, menemen, serpme kahvaltı",ll:[41.0330,28.9830],ap:1});
+// Öğle, akşam
+P({c:"ist",n:"Çiya Sofrası",cat:"yemek",s:"ld",d:1.5,k:2,se:"iysk",w:"scaf",ar:"Kadıköy",nh:0,note:"Mevsimlik Anadolu yemekleri tezgâhtan seçilir. Öğle yoğun olur.",eat:"Mevsimlik Anadolu yemekleri, içli köfte, yaprak sarma",ll:[40.9906,29.0242],ap:1});
+P({c:"ist",n:"Sultanahmet Köftecisi Selim Usta",cat:"yemek",s:"l",d:1,k:1,se:"iysk",w:"scaf",ar:"Sultanahmet",nh:0,note:"Köfte, piyaz ve irmik helvası. Turist bölgesinde hızlı öğle yemeği.",eat:"Izgara köfte, piyaz, irmik helvası",ll:[41.0070,28.9760],ap:1});
+P({c:"ist",n:"Hamdi Restaurant",cat:"yemek",s:"ld",d:2,k:3,se:"iysk",w:"scaf",ar:"Eminönü",nh:0,note:"Boğaz ve Haliç manzaralı teras. Kebap ve baklava ünlüdür.",eat:"Antep usulü kebap, fıstıklı baklava, humus",ll:[41.0172,28.9695],ap:1});
+P({c:"ist",n:"Pandeli",cat:"yemek",s:"l",d:1.5,k:3,se:"iysk",w:"sc",ar:"Eminönü",nh:0,note:"Mısır Çarşısı’nın üst katında tarihi bir lokanta.",eat:"Hünkâr beğendi, balık, meze",ll:[41.0166,28.9709],ap:1});
+P({c:"ist",n:"Kanaat Lokantası",cat:"yemek",s:"l",d:1,k:2,se:"iysk",w:"scaf",ar:"Üsküdar",nh:0,note:"Üsküdar’ın eski lokantası. Ev yemekleri ve zeytinyağlılar.",eat:"Ev yemekleri, zeytinyağlılar, tatlılar",ll:[41.0240,29.0170],ap:1});
+P({c:"ist",n:"Balıkçı Sabahattin",cat:"yemek",s:"d",d:2,k:3,se:"iysk",w:"sc",ar:"Sultanahmet",nh:0,note:"Cankurtaran’da eski bir ahşap evde balık. Rezervasyon şart.",eat:"Balık, meze, rakı sofrası",ll:[41.0035,28.9810],ap:1});
+P({c:"ist",n:"Nevizade Meyhaneleri",cat:"yemek",s:"d",d:2.5,k:2,se:"iysk",w:"scf",ar:"Beyoğlu",nh:0,note:"Meze ve balık ağırlıklı İstanbul meyhane geleneği. Hafta sonu rezervasyon yapın.",eat:"Meze, balık, rakı",ll:[41.0345,28.9770],ap:1});
+P({c:"ist",n:"Eminönü Balık Ekmek",cat:"yemek",s:"l",d:1,k:1,se:"iysk",w:"scaf",ar:"Eminönü",nh:0,note:"Rıhtımda balık ekmek. Hızlı ve ucuz.",eat:"Balık ekmek, turşu suyu",ll:[41.0178,28.9738],ap:1});
+P({c:"ist",n:"Ortaköy Kumpir",cat:"yemek",s:"e",d:1,k:1,se:"iys",w:"scaf",ar:"Ortaköy",nh:0,note:"Boğaz Köprüsü ışıkları yanarken oturmak için akşamüstü gelin.",eat:"Kumpir, waffle",ll:[41.0476,29.0267],ap:1});
+// Tatlı, kahve
+P({c:"ist",n:"Karaköy Güllüoğlu",cat:"yemek",s:"t",d:0.5,k:2,se:"iysk",w:"scaf",ar:"Karaköy",nh:0,note:"Baklava ve börek. Tezgâhta ayakta yemek mümkün.",eat:"Baklava, su böreği",ll:[41.0230,28.9770],ap:1});
+P({c:"ist",n:"Hafız Mustafa 1864",cat:"yemek",s:"t",d:0.5,k:2,se:"iysk",w:"scaf",ar:"Eminönü",nh:0,note:"Lokum, baklava ve sütlü tatlılar.",eat:"Lokum, baklava, sütlü tatlılar",ll:[41.0165,28.9715],ap:1});
+P({c:"ist",n:"Kurukahveci Mehmet Efendi",cat:"yemek",s:"t",d:0.5,k:1,se:"iysk",w:"scaf",ar:"Eminönü",nh:0,note:"1871’den beri Türk kahvesi satan dükkan. Hediyelik kahve için.",eat:"Türk kahvesi",ll:[41.0170,28.9700],ap:1});
+P({c:"ist",n:"Mandabatmaz",cat:"yemek",s:"t",d:0.5,k:1,se:"iysk",w:"scf",ar:"Beyoğlu",nh:0,note:"Küçük fincanlarda yoğun Türk kahvesi.",eat:"Türk kahvesi",ll:[41.0330,28.9770],ap:1});
+P({c:"ist",n:"Vefa Bozacısı",cat:"yemek",s:"t",d:0.5,k:1,se:"sk",w:"scaf",ar:"Vefa",nh:1,note:"1876’dan beri boza satan dükkan. Kış aylarında içilir.",eat:"Boza, leblebi",ll:[41.0140,28.9600],ap:1});
+// Gezilecek yerler
+P({c:"ist",n:"Ayasofya ve Sultanahmet Meydanı",cat:"tarih",s:"ma",d:2,k:1,se:"iysk",w:"scaf",ar:"Sultanahmet",nh:0,note:"Sabah erken gidin, öğleye doğru kuyruklar uzuyor. Sultanahmet Camii ve Hipodrom aynı yürüyüşe sığar.",ll:[41.0086,28.9802]});
+P({c:"ist",n:"Topkapı Sarayı ve Harem",cat:"tarih",s:"ma",d:3,k:2,se:"iysk",w:"scaf",ar:"Sultanahmet",nh:0,note:"Harem bölümüne ayrıca zaman ayırın. Avlulardan Boğaz ve Haliç manzarası açılır.",ll:[41.0115,28.9833]});
+P({c:"ist",n:"Yerebatan Sarnıcı",cat:"tarih",s:"a",d:1,k:2,se:"iysk",w:"scaf",ar:"Sultanahmet",nh:0,note:"Yağmurlu günler için iyi bir kapalı durak. Akşama doğru daha sakin.",ll:[41.0084,28.9779]});
+P({c:"ist",n:"Çemberlitaş Hamamı",cat:"huzur",s:"ae",d:2,k:3,se:"iysk",w:"scf",ar:"Sultanahmet",nh:0,note:"1584’te Mimar Sinan’a atfedilen tarihi hamam. Gün boyu yürüdükten sonra dinlenmek için.",ll:[41.0088,28.9708]});
+P({c:"ist",n:"Kapalıçarşı ve Mısır Çarşısı",cat:"tarih",s:"ma",d:2.5,k:1,se:"iysk",w:"scaf",ar:"Eminönü",nh:0,note:"Kapalıçarşı’da pazarlık âdettir. Mısır Çarşısı’nda baharat, lokum ve kuruyemiş.",ll:[41.0107,28.9680]});
+P({c:"ist",n:"Süleymaniye Camii ve Zeyrek",cat:"tarih,huzur",s:"ma",d:2.5,k:0,se:"iysk",w:"scaf",ar:"Eminönü",nh:1,note:"Süleymaniye avlusundan Haliç’e bakın. Zeyrek Camii ve Vefa yürüyüşün devamında.",ll:[41.0162,28.9640]});
+P({c:"ist",n:"Sahaflar Çarşısı",cat:"sanat",s:"m",d:1,k:0,se:"iysk",w:"scf",ar:"Eminönü",nh:1,note:"Beyazıt’taki eski kitap çarşısında nadir basımlar, haritalar ve gravürler.",ll:[41.0105,28.9650],ap:1});
+P({c:"ist",n:"Fener–Balat Sokakları",cat:"tarih,sanat",s:"ma",d:2,k:0,se:"iysk",w:"scaf",ar:"Fener–Balat",nh:1,note:"Antikacılar, kafeler ve boyalı evler. Hafta içi sabah daha sakin.",ll:[41.0290,28.9500],ap:1});
+P({c:"ist",n:"Galata Kulesi ve Karaköy",cat:"tarih",s:"ae",d:2,k:2,se:"iysk",w:"scaf",ar:"Karaköy",nh:0,note:"Kuleye çıkmasanız da Karaköy sokakları galeri ve kahve dolu.",ll:[41.0256,28.9742]});
+P({c:"ist",n:"İstanbul Modern",cat:"sanat",s:"a",d:2,k:2,se:"iysk",w:"scf",ar:"Karaköy",nh:0,note:"Karaköy rıhtımında, çağdaş Türk sanatına odaklı müze.",ll:[41.0268,28.9822],ap:1});
+P({c:"ist",n:"Pera Müzesi ve İstiklal Caddesi",cat:"sanat",s:"a",d:2.5,k:1,se:"iysk",w:"scaf",ar:"Beyoğlu",nh:0,note:"Nostaljik tramvayla caddeyi geçin. Osman Hamdi Bey’in Kaplumbağa Terbiyecisi Pera Müzesi’nde.",ll:[41.0316,28.9753],ap:1});
+P({c:"ist",n:"Eyüp Sultan ve Pierre Loti Tepesi",cat:"huzur,doga",s:"a",d:2.5,k:1,se:"iysk",w:"scaf",ar:"Eyüp",nh:0,note:"Teleferikle Pierre Loti’ye çıkıp Haliç manzarasında çay için.",ll:[41.0484,28.9340],ap:1});
+P({c:"ist",n:"Rahmi M. Koç Müzesi",cat:"tarih",s:"a",d:2.5,k:2,se:"iysk",w:"caf",ar:"Haliç",nh:0,note:"Hasköy’de sanayi ve ulaşım tarihi. Arabalar, gemiler ve bir denizaltı çocuklarla da keyifli.",ll:[41.0420,28.9490],ap:1});
+P({c:"ist",n:"Boğaz Vapur Turu",cat:"doga",s:"ma",d:3,k:1,se:"iysk",w:"scaf",ar:"Boğaz",nh:0,note:"Eminönü’nden Anadolu Kavağı’na. En ucuz Boğaz turu. Kışın ceket şart.",ll:[41.0175,28.9730],ap:1});
+P({c:"ist",n:"Dolmabahçe Sarayı",cat:"tarih",s:"m",d:2,k:2,se:"iysk",w:"scaf",ar:"Boğaz",nh:0,note:"Selamlık ve Harem bölümleri rehberli turla gezilir. Saatleri önceden kontrol edin.",ll:[41.0392,29.0007]});
+P({c:"ist",n:"Rumeli Hisarı ve Bebek",cat:"tarih,doga",s:"ma",d:2,k:1,se:"iys",w:"scaf",ar:"Boğaz",nh:0,note:"Hisarın burçlarından Boğaz’ı izleyin, Bebek’te badem ezmesi.",ll:[41.0847,29.0567]});
+P({c:"ist",n:"Moda Sahili ve Çay Bahçeleri",cat:"huzur",s:"ae",d:1.5,k:1,se:"iysk",w:"scaf",ar:"Kadıköy",nh:0,note:"Gün batımı, martılar ve rahat bir Kadıköy atmosferi.",ll:[40.9857,29.0258],ap:1});
+P({c:"ist",n:"Kadıköy Çarşısı",cat:"yemek",s:"a",d:1.5,k:1,se:"iysk",w:"scaf",ar:"Kadıköy",nh:0,note:"Peynir, zeytin ve turşu tezgâhları.",ll:[40.9900,29.0250],ap:1});
+P({c:"ist",n:"Kız Kulesi ve Üsküdar Sahili",cat:"tarih,huzur",s:"ae",d:2,k:1,se:"iysk",w:"scaf",ar:"Üsküdar",nh:0,note:"Sahilden Kız Kulesi’ne bakmak ücretsiz.",ll:[41.0211,29.0041]});
+P({c:"ist",n:"Kuzguncuk Mahalle Yürüyüşü",cat:"tarih,huzur",s:"ma",d:2,k:0,se:"iys",w:"scaf",ar:"Üsküdar",nh:1,note:"Cami, kilise ve sinagogun komşu olduğu eski Boğaz mahallesi.",ll:[41.0350,29.0280],ap:1});
+P({c:"ist",n:"Büyük Çamlıca Tepesi",cat:"huzur,doga",s:"a",d:1.5,k:0,se:"iysk",w:"scaf",ar:"Üsküdar",nh:0,note:"Şehrin geniş panoraması. Gün batımına yakın saatler güzel.",ll:[41.0270,29.0690],ap:1});
+P({c:"ist",n:"Büyükada’da Bisiklet",cat:"macera,doga",s:"m",d:4,k:2,se:"iys",w:"scaf",ar:"Adalar",nh:0,note:"Adada motorlu özel araç yok. Bisiklet kiralayıp ada yolunu dolaşın. Vapurla gidilir.",ll:[40.8700,29.1300],ap:1});
+P({c:"ist",n:"Belgrad Ormanı Bentler Yürüyüşü",cat:"doga,macera",s:"m",d:3,k:0,se:"iys",w:"scaf",ar:"Belgrad Ormanı",nh:1,note:"Şehrin yeşil nefesi. Hafta sonları kalabalık, hafta içi çok daha sakin.",ll:[41.1900,28.9900],ap:1});

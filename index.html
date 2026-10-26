@@ -1,0 +1,1234 @@
+<!doctype html>
+<html lang="tr"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Rota Defteri</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Overpass:wght@400;600;800&family=Overpass+Mono:wght@500;600&display=swap">
+<style>
+/* Düzen: sol sütunda seçimler, sağda yol levhaları ve gün gün rota. Dil: Karayolları tabelaları. Kahverengi levha turistik yerleri, mavi levha rotayı, yeşil levha günleri taşır. Sarı çizgi yolun kendisi. */
+:root {
+  --bg: #E4E5DE;
+  --surface: #F3F3ED;
+  --ink: #1A2124;
+  --muted: #566265;
+  --line: #C6C9C0;
+  --yellow: #F2C230;
+  --on-yellow: #171A1B;
+  --brown: #6C3F24;
+  --blue: #0D4C92;
+  --green: #0A6A44;
+  --sign-ink: #FFFFFF;
+  --map-bg: #1F2629;
+  --map-grid: #2C3539;
+  --map-road: #3C484C;
+  --map-ink: #E9EBE4;
+  --map-dim: #9AA7AA;
+  --alert: #B3361E;
+  --f-display: "Overpass", "Arial Narrow", "Segoe UI", system-ui, sans-serif;
+  --f-body: "Overpass", "Segoe UI", system-ui, sans-serif;
+  --f-mono: "Overpass Mono", ui-monospace, Menlo, Consolas, monospace;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #12181A; --surface: #1B2326; --ink: #E9EBE4; --muted: #9CA8AB; --line: #2F3A3E;
+    --brown: #7B4A2C; --blue: #1659AE; --green: #0F7A50;
+    --map-bg: #0C1113; --map-grid: #1A2326; --map-road: #2E393D; --alert: #F08A74;
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #12181A; --surface: #1B2326; --ink: #E9EBE4; --muted: #9CA8AB; --line: #2F3A3E;
+  --brown: #7B4A2C; --blue: #1659AE; --green: #0F7A50;
+  --map-bg: #0C1113; --map-grid: #1A2326; --map-road: #2E393D; --alert: #F08A74;
+  color-scheme: dark;
+}
+
+* { box-sizing: border-box; }
+body {
+  background: var(--bg); color: var(--ink);
+  font-family: var(--f-body); font-size: 16px; line-height: 1.5;
+  padding-block: 8px 56px;
+  padding-left: max(16px, env(safe-area-inset-left, 0px));
+  padding-right: max(16px, env(safe-area-inset-right, 0px));
+}
+.wrap { max-width: 1240px; margin: 0 auto; }
+h1, h2, h3, h4 { font-family: var(--f-display); margin: 0; line-height: 1.1; text-wrap: balance; }
+p { margin: 0; }
+button, input { font: inherit; color: inherit; }
+:focus-visible { outline: 3px solid var(--yellow); outline-offset: 2px; }
+.mono { font-family: var(--f-mono); }
+
+/* levha: iç beyaz çerçeveli, yuvarlak köşeli */
+.sign { color: var(--sign-ink); border-radius: 12px; padding: 12px 16px; box-shadow: inset 0 0 0 3px var(--sign-bg), inset 0 0 0 5px var(--sign-ink); }
+.sign.brown { --sign-bg: var(--brown); background: var(--brown); }
+.sign.blue { --sign-bg: var(--blue); background: var(--blue); }
+.sign.green { --sign-bg: var(--green); background: var(--green); }
+
+/* üst */
+.top { display: flex; flex-wrap: wrap; align-items: center; gap: 14px 22px; padding-block: 22px 20px; }
+.brand { font-family: var(--f-display); font-weight: 800; font-size: clamp(26px, 4.6vw, 38px); letter-spacing: 0.01em; text-transform: uppercase; padding: 8px 20px; }
+.lede { color: var(--muted); max-width: 52ch; flex: 1 1 260px; }
+
+.grid { display: grid; grid-template-columns: 340px minmax(0, 1fr); gap: 30px; align-items: start; }
+.panel { background: var(--surface); border: 1px solid var(--line); border-radius: 14px; padding: 18px; display: grid; gap: 20px; position: sticky; top: 14px; max-height: calc(100vh - 28px); overflow-y: auto; }
+fieldset { border: 0; padding: 0; margin: 0; min-width: 0; display: grid; gap: 8px; }
+legend { padding: 0; margin-bottom: 8px; font-family: var(--f-mono); font-size: 12px; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; color: var(--muted); }
+
+.cities { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+.city { position: relative; display: block; }
+.city input { position: absolute; opacity: 0; inset: 0; cursor: pointer; margin: 0; }
+.city .sign { display: grid; gap: 0; padding: 9px 12px; min-height: 56px; box-shadow: inset 0 0 0 2px var(--sign-bg), inset 0 0 0 3.5px var(--sign-ink); opacity: 0.9; transition: opacity .12s; }
+.city strong { font-family: var(--f-display); font-weight: 800; font-size: 17px; text-transform: uppercase; letter-spacing: 0.02em; }
+.city small { font-size: 12px; line-height: 1.25; opacity: .88; }
+.city input:checked + .sign { opacity: 1; outline: 3px solid var(--yellow); outline-offset: 2px; }
+.city input:focus-visible + .sign { outline: 3px solid var(--yellow); outline-offset: 2px; }
+.city:hover .sign { opacity: 1; }
+
+.seg { display: flex; border: 2px solid var(--ink); border-radius: 10px; overflow: hidden; background: var(--surface); }
+.seg label { position: relative; flex: 1; text-align: center; }
+.seg label + label { border-left: 2px solid var(--ink); }
+.seg input { position: absolute; opacity: 0; inset: 0; cursor: pointer; margin: 0; }
+.seg span { display: block; padding: 8px 4px; font-size: 14px; font-weight: 600; }
+.seg input:checked + span { background: var(--yellow); color: var(--on-yellow); font-weight: 800; }
+.seg input:focus-visible + span { outline: 3px solid var(--blue); outline-offset: -4px; }
+
+.chips { display: flex; flex-wrap: wrap; gap: 8px; }
+.chip { position: relative; }
+.chip input { position: absolute; opacity: 0; inset: 0; cursor: pointer; margin: 0; }
+.chip span { display: inline-block; padding: 6px 13px; border: 2px solid var(--ink); border-radius: 999px; font-size: 14px; font-weight: 600; background: var(--surface); }
+.chip input:checked + span { background: var(--ink); color: var(--surface); }
+.chip input:focus-visible + span { outline: 3px solid var(--yellow); outline-offset: 2px; }
+
+.date-in { width: 100%; padding: 9px 12px; border: 2px solid var(--ink); border-radius: 10px; background: var(--surface); }
+.switch { display: flex; gap: 10px; align-items: flex-start; font-size: 14px; font-weight: 600; cursor: pointer; }
+.switch input { accent-color: var(--blue); width: 20px; height: 20px; margin-top: 1px; flex: none; }
+.switch small { display: block; color: var(--muted); font-weight: 400; }
+
+.actions { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+.btn { padding: 10px 12px; border-radius: 10px; border: 2px solid var(--ink); cursor: pointer; font-weight: 800; font-size: 14px; }
+.btn.primary { background: var(--yellow); color: var(--on-yellow); }
+.btn.ghost { background: transparent; }
+.btn:hover { filter: brightness(1.07); }
+.msg { min-height: 1.4em; font-size: 13px; color: var(--muted); grid-column: 1 / -1; }
+#copyBox { grid-column: 1 / -1; width: 100%; min-height: 120px; padding: 10px; border: 2px solid var(--ink); border-radius: 10px; background: var(--surface); font-family: var(--f-mono); font-size: 12px; color: var(--ink); }
+
+/* rota */
+.route { display: grid; gap: 34px; min-width: 0; }
+.route-head { display: grid; gap: 12px; }
+.route-head .sign { display: grid; gap: 6px; padding: 16px 22px 18px; }
+.route-head .kicker { font-family: var(--f-mono); font-size: 12px; font-weight: 600; letter-spacing: 0.1em; text-transform: uppercase; opacity: .9; }
+.route-head h2 { font-size: clamp(30px, 5vw, 50px); font-weight: 800; text-transform: uppercase; letter-spacing: 0.01em; }
+.facts { list-style: none; margin: 0; padding: 0; display: flex; flex-wrap: wrap; gap: 8px; }
+.facts li { font-family: var(--f-mono); font-size: 12.5px; font-weight: 500; padding: 4px 10px; border: 2px solid var(--ink); border-radius: 6px; }
+.tip, .notice { padding: 12px 14px; border-radius: 10px; max-width: 72ch; font-size: 15px; }
+.tip { background: var(--surface); border: 1px solid var(--line); color: var(--muted); }
+.tip b { color: var(--ink); }
+.notice { background: var(--surface); border: 2px solid var(--alert); }
+.transit { font-size: 14px; color: var(--muted); max-width: 72ch; }
+.transit b { color: var(--ink); }
+
+.day { display: grid; gap: 14px; }
+.day-head { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 14px; }
+.day-head .sign { display: flex; flex-wrap: wrap; align-items: baseline; gap: 4px 14px; padding: 9px 18px; }
+.day-no { font-family: var(--f-mono); font-size: 13px; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; }
+.day-head h3 { font-size: clamp(20px, 3vw, 28px); font-weight: 800; text-transform: uppercase; }
+.day-date { font-family: var(--f-mono); font-size: 12.5px; color: var(--muted); }
+.far-tag { font-family: var(--f-mono); font-size: 11.5px; font-weight: 600; padding: 3px 9px; border-radius: 6px; background: var(--yellow); color: var(--on-yellow); }
+
+/* harita */
+.mapbox { background: var(--map-bg); border-radius: 14px; overflow: hidden; border: 1px solid var(--line); }
+.mapbox svg { display: block; width: 100%; height: auto; }
+.mapbox .cap { padding: 8px 14px 10px; font-size: 12.5px; color: var(--map-dim); border-top: 1px solid var(--map-grid); }
+.m-grid { stroke: var(--map-grid); stroke-width: 1; }
+.m-road { stroke: var(--map-road); stroke-width: 12; stroke-linecap: round; stroke-linejoin: round; fill: none; }
+.m-line { stroke: var(--yellow); stroke-width: 2.2; stroke-dasharray: 9 8; fill: none; }
+.m-pin { fill: var(--yellow); stroke: var(--map-bg); stroke-width: 3; cursor: pointer; }
+.m-num { font-family: var(--f-mono); font-size: 13px; font-weight: 600; fill: var(--on-yellow); text-anchor: middle; dominant-baseline: central; pointer-events: none; }
+.m-lbl { font-family: var(--f-body); font-size: 13px; font-weight: 600; fill: var(--map-ink); paint-order: stroke; stroke: var(--map-bg); stroke-width: 4px; stroke-linejoin: round; }
+.m-dist { font-family: var(--f-mono); font-size: 11px; font-weight: 500; fill: var(--map-dim); paint-order: stroke; stroke: var(--map-bg); stroke-width: 4px; stroke-linejoin: round; text-anchor: middle; }
+.m-scale { stroke: var(--map-ink); stroke-width: 2; fill: none; }
+.m-sc-t { font-family: var(--f-mono); font-size: 11px; fill: var(--map-ink); }
+.m-n { font-family: var(--f-mono); font-size: 11px; font-weight: 600; fill: var(--map-ink); text-anchor: middle; }
+.m-na { fill: var(--map-ink); }
+.mp:hover .m-pin { fill: var(--map-ink); }
+
+/* duraklar */
+.stops { list-style: none; margin: 0; padding: 0; display: grid; gap: 0; position: relative; }
+.stops::before { content: ""; position: absolute; left: 12px; top: 16px; bottom: 16px; width: 8px; border-radius: 4px; background: repeating-linear-gradient(to bottom, transparent 0 6px, var(--yellow) 6px 12px) center / 2px 100% no-repeat, var(--map-road); }
+.stop, .leg { position: relative; display: grid; grid-template-columns: 32px minmax(0, 1fr); gap: 16px; }
+.pin { width: 32px; height: 32px; border-radius: 50%; background: var(--yellow); color: var(--on-yellow); border: 3px solid var(--bg); font-family: var(--f-mono); font-size: 14px; font-weight: 600; display: grid; place-items: center; position: relative; z-index: 1; margin-top: 12px; }
+.stop.soft .pin { background: var(--surface); color: var(--muted); border-color: var(--bg); box-shadow: 0 0 0 2px var(--line); }
+.card { background: var(--surface); border: 1px solid var(--line); border-radius: 12px; padding: 14px 16px; display: grid; gap: 8px; min-width: 0; margin-block: 4px; transition: border-color .15s, box-shadow .15s; }
+.stop.soft .card { background: transparent; border-style: dashed; color: var(--muted); }
+.stop.flash .card { border-color: var(--yellow); box-shadow: 0 0 0 3px var(--yellow); }
+.card-top { display: flex; flex-wrap: wrap; gap: 2px 12px; align-items: baseline; }
+.time { font-family: var(--f-mono); font-size: 14px; font-weight: 600; }
+.slot { font-family: var(--f-mono); font-size: 11.5px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--muted); }
+.card h4 { font-size: 21px; font-weight: 800; overflow-wrap: anywhere; }
+.where { font-size: 13.5px; color: var(--muted); }
+.meta { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; font-size: 13px; }
+.meta .tag { padding: 1px 8px; border-radius: 6px; border: 1px solid var(--line); }
+.meta .dur { font-family: var(--f-mono); }
+.badge { padding: 2px 8px; border-radius: 6px; font-size: 12px; font-weight: 800; }
+.badge.niche { background: var(--brown); color: var(--sign-ink); }
+.badge.event { background: var(--blue); color: var(--sign-ink); }
+.badge.ap { background: transparent; border: 1px dashed var(--muted); color: var(--muted); font-weight: 600; }
+.eat { font-size: 15px; display: flex; gap: 8px; align-items: baseline; flex-wrap: wrap; }
+.eat b { font-family: var(--f-mono); font-size: 11.5px; letter-spacing: 0.08em; text-transform: uppercase; background: var(--green); color: var(--sign-ink); padding: 1px 8px; border-radius: 4px; }
+.note { font-size: 15px; max-width: 64ch; }
+.hist { margin-top: 10px; border-top: 1px dashed var(--line); padding-top: 8px; }
+.hist summary { cursor: pointer; list-style: none; display: inline-flex; align-items: center; gap: 8px; font-family: var(--f-mono); font-size: 12px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--ink); padding: 6px 10px; border: 1.5px solid var(--ink); border-radius: 6px; min-height: 32px; }
+.hist summary::-webkit-details-marker { display: none; }
+.hist summary::before { content: "+"; font-weight: 800; width: 12px; text-align: center; }
+.hist[open] summary::before { content: "–"; }
+.hist summary:hover { background: var(--yellow); color: var(--on-yellow); border-color: var(--yellow); }
+.hist summary:focus-visible { outline: 3px solid var(--yellow); outline-offset: 2px; }
+.hist p.tip { background: var(--surface); border-left: 4px solid var(--yellow); padding: 8px 12px; border-radius: 0 6px 6px 0; }
+.hist p.tip b { display: block; font-family: var(--f-mono); font-size: 11.5px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--muted); margin-bottom: 2px; font-weight: 600; }
+.hist p { margin: 10px 0 0; font-size: 15px; max-width: 64ch; line-height: 1.55; }
+
+
+.leg-chip { justify-self: start; margin: 4px 0; font-family: var(--f-mono); font-size: 12.5px; font-weight: 500; padding: 4px 11px; border-radius: 999px; background: var(--blue); color: var(--sign-ink); }
+.leg-chip.far { background: var(--brown); }
+
+.foot { margin-top: 40px; padding-top: 18px; border-top: 2px solid var(--ink); color: var(--muted); font-size: 13.5px; display: grid; gap: 6px; max-width: 84ch; }
+
+@media (max-width: 920px) {
+  .grid { grid-template-columns: minmax(0, 1fr); }
+  .panel { position: static; max-height: none; overflow: visible; }
+}
+@media (max-width: 430px) {
+  .cities { grid-template-columns: 1fr; }
+  .stop, .leg { grid-template-columns: 28px minmax(0, 1fr); gap: 10px; }
+  .pin { width: 28px; height: 28px; font-size: 13px; }
+  .stops::before { left: 10px; }
+  .card h4 { font-size: 19px; }
+}
+@media (prefers-reduced-motion: reduce) { * { transition: none !important; scroll-behavior: auto !important; } }
+</style>
+
+<div class="wrap">
+  <header class="top">
+    <h1 class="brand sign brown">Rota Defteri</h1>
+    <p class="lede">Şehri, tarihi ve ilgi alanlarını seç. Kahvaltıdan akşam yemeğine saat saat, durak durak bir rota çıkar ve yol mesafelerini burada gör.</p>
+  </header>
+
+  <div class="grid">
+    <form class="panel" id="form" autocomplete="off" onsubmit="return false">
+      <fieldset><legend>Şehir</legend><div class="cities" id="f-city"></div></fieldset>
+      <fieldset><legend>Kaç gün</legend><div class="seg" id="f-days"></div></fieldset>
+      <fieldset><legend>Tempo</legend><div class="seg" id="f-tempo"></div></fieldset>
+      <fieldset><legend>Başlangıç tarihi</legend><input class="date-in" type="date" id="date" name="date"></fieldset>
+      <fieldset><legend>İlgi alanları</legend><div class="chips" id="f-interests"></div></fieldset>
+      <fieldset><legend>Bütçe</legend><div class="seg" id="f-budget"></div></fieldset>
+      <fieldset><legend>Kiminle</legend><div class="seg" id="f-who"></div></fieldset>
+      <label class="switch"><input type="checkbox" id="niche"><span>Az bilinen yerlere öncelik ver<small>Kalabalıktan uzak, yerelin bildiği duraklar öne çıkar.</small></span></label>
+      <div class="actions">
+        <button type="button" class="btn primary" id="shuffle">Rotayı yenile</button>
+        <button type="button" class="btn ghost" id="copy">Metni kopyala</button>
+        <div class="msg" id="msg" role="status" aria-live="polite"></div>
+        <textarea id="copyBox" readonly hidden aria-label="Rota metni"></textarea>
+      </div>
+    </form>
+
+    <main class="route" id="route" aria-live="polite"></main>
+  </div>
+
+  <footer class="foot">
+    <p>Çalışma saatleri, bilet fiyatları ve etkinlik tarihleri değişebilir. Gitmeden önce resmi kaynaklardan kontrol edin.</p>
+    <p>Haritadaki konumların bir kısmı semt düzeyinde yaklaşıktır, bu duraklar “konum yaklaşık” etiketiyle işaretlidir. Yol süreleri iki durak arasındaki kuş uçuşu mesafeden tahmin edilir.</p>
+    <p>Mekan adlarının önemli bir kısmı yemek.com mekan listelerinden, anıt ve antik kent konumları Vikipedi’den alındı. Maliyet: ₺ ekonomik, ₺₺ orta, ₺₺₺ yüksek.</p>
+  </footer>
+</div>
+<script>
+/* Rota Defteri: çekirdek (şehirler, doğrulayıcı, rota motoru). Veri dosyaları bunun ardından P({...}) çağırır. */
+const D = [];
+const CATS = { tarih: "Tarih & Miras", doga: "Doğa & Manzara", yemek: "Lezzet", sanat: "Sanat & Kültür", macera: "Macera", huzur: "Huzur" };
+const SEASONS = { i: "İlkbahar", y: "Yaz", s: "Sonbahar", k: "Kış" };
+const WHO = { s: "Tek başına", c: "Çift", a: "Aile", f: "Arkadaşlar" };
+const BUDGET = { 1: "Ekonomik", 2: "Dengeli", 3: "Rahat" };
+const COST = ["Ücretsiz", "₺", "₺₺", "₺₺₺"];
+const TEMPO = { rahat: "Rahat", dengeli: "Dengeli", dolu: "Dolu" };
+
+/* b: kahvaltı, m: sabah gezisi, l: öğle yemeği, a: öğleden sonra, t: kahve/tatlı/çay molası, e: gün batımı ve akşam gezisi, d: akşam yemeği */
+const SEQ = {
+  rahat: ["b", "m", "l", "a", "d"],
+  dengeli: ["b", "m", "m", "l", "a", "e", "d"],
+  dolu: ["b", "m", "m", "l", "a", "a", "t", "e", "d"]
+};
+const TIMES = {
+  rahat: ["09:00", "10:30", "13:00", "15:00", "19:30"],
+  dengeli: ["08:30", "10:00", "11:45", "13:15", "15:00", "SUN", "20:00"],
+  dolu: ["08:30", "10:00", "11:30", "13:00", "14:30", "16:00", "17:10", "SUN", "20:15"]
+};
+const SUNSET = { i: "18:30", y: "19:30", s: "17:30", k: "16:45" };
+const FALL = { e: ["a", "m"], a: ["m"], m: ["a"], l: ["d"], d: ["l"] };
+const SLOTNAME = { b: "Kahvaltı", m: "Sabah", l: "Öğle yemeği", a: "Öğleden sonra", t: "Kahve arası", e: "Gün batımı", d: "Akşam yemeği" };
+
+const CITIES = {
+  ist: { name: "İstanbul", loc: "da", sub: "Boğaz, Sultanahmet, Kadıköy", center: [41.0082, 28.9784],
+    tips: { i: "Lale ve çiçek mevsimi. Hava serin ve değişken, yanınıza ince bir ceket alın.",
+      y: "Sıcak ve nemli. Açık hava gezilerini sabaha, müzeleri öğle sıcağına alın.",
+      s: "Ilıman ve çoğunlukla açık. Yağmura karşı küçük bir şemsiye iyi olur.",
+      k: "Soğuk, yağışlı ve rüzgârlı. Kapalı mekânlar ve sıcak çorba iyi gider." },
+    transit: "İstanbulkart ile metro, tramvay, Marmaray ve vapur tek kartta. Sultanahmet, Karaköy ve Kabataş arası T1 tramvayla, iki yaka arası Marmaray ya da vapurla geçilir." },
+  kon: { name: "Konya", loc: "da", sub: "Mevlana, Selçuklu, Sille", center: [37.8715, 32.4846],
+    tips: { i: "Ilık ve zaman zaman yağışlı. Meram’da bağlar yeşilleniyor.",
+      y: "Kuru ve sıcak. Öğle saatlerinde gölge arayın, açık hava işlerini sabaha alın.",
+      s: "Gündüzler yumuşak, akşamlar serin. Gezmek için en rahat dönemlerden.",
+      k: "Soğuk ve zaman zaman karlı. Aralık’taki Mevlana anma törenleri için erken rezervasyon yapın." },
+    transit: "Merkezdeki tarihi duraklar yürünebilir mesafede, tramvay da var. Sille, Çatalhöyük ve Beyşehir için araç ya da taksi gerekir." },
+  cap: { name: "Kapadokya", loc: "da", sub: "Göreme, Uçhisar, Ihlara", center: [38.6431, 34.8289],
+    tips: { i: "Vadiler yeşil, hava serin. Balon ve yürüyüş için güzel dönem.",
+      y: "Gündüz sıcak, sabah ve akşam serin. Yürüyüşleri sabaha alın.",
+      s: "Işık yumuşak, renkler sıcak. Fotoğraf için çok uygun.",
+      k: "Soğuk ve zaman zaman karlı. Kar altında peribacaları bambaşka görünür, kalın giyinin." },
+    transit: "Köyler arası mesafe kısa ama toplu taşıma sınırlı. Araç kiralamak, rehberli tur ya da taksi en rahatı. Göreme, Uçhisar ve Ürgüp arasında dolmuş da çalışır." },
+  izm: { name: "İzmir", loc: "de", sub: "Kordon, Urla, Efes", center: [38.4237, 27.1428],
+    tips: { i: "Hava yumuşak, çiçekler açık. Deniz henüz serin.",
+      y: "Sıcak ve kuru. Gün ortasında deniz ya da gölge, akşam sahil.",
+      s: "Deniz hâlâ ılık, kalabalık azalmış. Zeytin hasadı dönemi.",
+      k: "Ilıman ama yağışlı. Flamingolar ve sakin sahil köyleri için güzel." },
+    transit: "Metro, İZBAN, tramvay ve vapurlar tek kartta. Karşıyaka ve Bostanlı için vapur en keyiflisi. Urla, Çeşme ve Efes için araç ya da otobüs gerekir." },
+  ant: { name: "Antalya", loc: "da", sub: "Kaleiçi, Perge, Olympos", center: [36.8841, 30.7056],
+    tips: { i: "Hava gezmeye çok rahat, deniz için biraz erken.",
+      y: "Çok sıcak ve nemli. Antik kentleri sabah erken gezin.",
+      s: "Deniz ılık, hava rahat. Gezi için çok uygun.",
+      k: "Kıyıda ılık günler, yağış olabilir. Dağlarda kar, bahçelerde portakal." },
+    transit: "Kaleiçi yürünerek gezilir, tramvay (Antray) ve otobüsler merkezi bağlar. Perge, Aspendos, Side ve Olympos için araç ya da rehberli tur gerekir." },
+  trb: { name: "Trabzon", loc: "da", sub: "Sümela, Uzungöl, yaylalar", center: [41.0027, 39.7168],
+    tips: { i: "Sık yağmur ve sis. Yağmurluk şart, doğa yeşil doruğunda.",
+      y: "Yaylalar için en iyi dönem. Yağmur yine de olası.",
+      s: "Hamsi mevsimi başlıyor, yağışlar artıyor.",
+      k: "Soğuk ve yağışlı, yaylalar karlı. Yol durumunu kontrol edin." },
+    transit: "Merkez yürünerek gezilir. Sümela, Uzungöl ve yaylalar için araç kiralayın ya da rehberli tur alın. Kıyı hattında minibüsler sık çalışır." },
+  mer: { name: "Mersin", loc: "de", sub: "Kızkalesi, Tarsus, Silifke", center: [36.8121, 34.6415],
+    tips: { i: "Hava ılık ve nemli, çiçekler açık. Deniz yüzmek için henüz serin.",
+      y: "Çok sıcak ve nemli. Antik kentleri sabah, denizi öğleden sonra planlayın.",
+      s: "Deniz hâlâ ılık, sıcaklar yumuşuyor. Gezi için rahat bir dönem.",
+      k: "Ilıman ve hafif yağışlı. Kıyı yürüyüşü ve narenciye mevsimi." },
+    transit: "Merkez, sahil boyunca yürünebilir. Tarsus ve Erdemli için minibüs ve otobüs var. Kızkalesi, Silifke, Uzuncaburç ve Anamur için araç ya da şehirlerarası otobüs gerekir." },
+  ada: { name: "Adana", loc: "da", sub: "Taşköprü, Seyhan, Kebap", center: [36.9914, 35.3308],
+    tips: { i: "Sıcaklar başlıyor ama hâlâ rahat. Narenciye ve bahar çiçekleri.",
+      y: "Çok sıcak ve kuru. Açık hava gezilerini sabaha ve akşama alın, öğleyi kapalı mekânda geçirin.",
+      s: "Sıcaklar yumuşuyor. Açık hava gezileri için en rahat dönemlerden.",
+      k: "Ilıman ve zaman zaman yağışlı. Kebap, şalgam ve müze mevsimi." },
+    transit: "Metro ve belediye otobüsleri merkezi bağlar. Taşköprü, Saat Kulesi ve çarşı yürünebilir. Karatepe, Anavarza ve Kozan için araç gerekir." }
+};
+
+/* Doğrulayıcı: eksik ya da hatalı alan varsa hata fırlatır */
+function P(o) {
+  const need = ["c", "n", "cat", "s", "d", "k", "se", "w", "ar", "nh", "note", "ll"];
+  for (const f of need) if (o[f] === undefined || o[f] === null || o[f] === "") throw new Error("Eksik alan '" + f + "': " + (o.n || JSON.stringify(o).slice(0, 80)));
+  if (!CITIES[o.c]) throw new Error("Bilinmeyen şehir: " + o.c);
+  const cats = o.cat.split(","); for (const c of cats) if (!CATS[c]) throw new Error("Bilinmeyen kategori '" + c + "': " + o.n);
+  for (const x of o.s.split("")) if (!"bmlatde".includes(x)) throw new Error("Bilinmeyen slot '" + x + "': " + o.n);
+  for (const x of o.se.split("")) if (!"iysk".includes(x)) throw new Error("Bilinmeyen mevsim '" + x + "': " + o.n);
+  for (const x of o.w.split("")) if (!"scaf".includes(x)) throw new Error("Bilinmeyen kimle kodu '" + x + "': " + o.n);
+  if (![0, 1, 2, 3].includes(o.k)) throw new Error("Maliyet 0-3 olmalı: " + o.n);
+  if (typeof o.d !== "number" || o.d <= 0) throw new Error("Süre sayı olmalı: " + o.n);
+  if (!Array.isArray(o.ll) || o.ll.length !== 2 || o.ll.some(v => typeof v !== "number")) throw new Error("ll [enlem, boylam] olmalı: " + o.n);
+  if (o.ll[0] < 35.5 || o.ll[0] > 42.3 || o.ll[1] < 25.5 || o.ll[1] > 45) throw new Error("Koordinat Türkiye dışında: " + o.n);
+  const food = o.s.split("").some(x => "bld".includes(x));
+  if (food && !cats.includes("yemek")) throw new Error("b/l/d slotlu yer 'yemek' kategorisinde olmalı: " + o.n);
+  D.push({ id: D.length, city: o.c, name: o.n, cats, slots: o.s.split(""), dur: o.d, cost: o.k, seasons: o.se.split(""),
+    who: o.w.split(""), area: o.ar, niche: !!o.nh, note: o.note, eat: o.eat || "", ll: o.ll, ap: !!o.ap, mon: o.mon || null, t: o.t || null });
+}
+
+function hav(a, b) {
+  const r = Math.PI / 180, dLat = (b[0] - a[0]) * r, dLon = (b[1] - a[1]) * r;
+  const x = Math.sin(dLat / 2) ** 2 + Math.cos(a[0] * r) * Math.cos(b[0] * r) * Math.sin(dLon / 2) ** 2;
+  return 12742 * Math.asin(Math.sqrt(x));
+}
+/* iki durak arası tahmini yol: kuş uçuşu mesafeden */
+function leg(a, b) {
+  const d = hav(a, b);
+  const road = d * (d > 30 ? 1.25 : 1.3);
+  let mode, min;
+  if (road < 1.3) { mode = "yürüyerek"; min = road / 4.8 * 60; }
+  else if (road < 7) { mode = "toplu taşıma ya da taksi"; min = road / 18 * 60 + 5; }
+  else { mode = "araçla"; min = road / (road < 25 ? 28 : 65) * 60 + 5; }
+  return { km: road, min: Math.max(1, Math.round(min / 5) * 5 || 5), mode };
+}
+
+/* p noktasının A-B doğru parçasına km cinsinden uzaklığı (yerel düzlem yaklaşımı) */
+function segKm(p, A, B) {
+  const k = Math.cos(A[0] * Math.PI / 180), r = 111.19;
+  const px = (p[1] - A[1]) * k * r, py = (p[0] - A[0]) * r, bx = (B[1] - A[1]) * k * r, by = (B[0] - A[0]) * r;
+  const L = bx * bx + by * by;
+  const t = L ? Math.max(0, Math.min(1, (px * bx + py * by) / L)) : 0;
+  return Math.hypot(px - t * bx, py - t * by);
+}
+function seasonOf(m) { return m >= 3 && m <= 5 ? "i" : m >= 6 && m <= 8 ? "y" : m >= 9 && m <= 11 ? "s" : "k"; }
+function mulberry32(a) { return function () { a |= 0; a = a + 0x6D2B79F5 | 0; let t = Math.imul(a ^ a >>> 15, 1 | a); t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t; return ((t ^ t >>> 14) >>> 0) / 4294967296; }; }
+
+/* o: {city, days, tempo, interests:Set, date:Date, budget, who, niche, seed} */
+function planTrip(o) {
+  const rng = mulberry32(o.seed);
+  const city = CITIES[o.city];
+  const months = new Set();
+  for (let i = 0; i < o.days; i++) { const d = new Date(o.date); d.setDate(d.getDate() + i); months.add(d.getMonth() + 1); }
+  const season = seasonOf(o.date.getMonth() + 1);
+  const pool = D.filter(a => a.city === o.city && a.seasons.includes(season) && a.cost <= o.budget &&
+    a.who.includes(o.who) && (!a.mon || a.mon.some(m => months.has(m))));
+  const seq = SEQ[o.tempo] || SEQ.dengeli;
+  const times = (TIMES[o.tempo] || TIMES.dengeli).map(t => t === "SUN" ? SUNSET[season] : t);
+  const used = new Set();
+  const maxFar = Math.max(1, Math.floor(o.days / 2));
+  let farDays = 0, gaps = 0;
+  const isFar = a => hav(city.center, a.ll) > 28;
+  const mealSlot = s => s === "b" || s === "l" || s === "d";
+  const base = (a, slot) => {
+    let s = 0;
+    if (mealSlot(slot)) {
+      if (a.niche) s += o.niche ? 1.8 : 0.3;
+      if (a.cost === o.budget) s += 0.6;
+    } else {
+      const m = a.cats.filter(c => o.interests.has(c)).length;
+      s += o.interests.size ? m * 3 : 1;
+      if (a.niche) s += o.niche ? 2.2 : 0.3;
+      if (a.cost === o.budget) s += 0.4;
+      if (slot === "t") s += a.cats.includes("yemek") ? 1.5 : 0;
+    }
+    if (a.mon) s += 4;
+    return s + rng() * 1.4;
+  };
+  const days = [];
+  for (let d = 0; d < o.days; d++) {
+    const farOK = farDays < maxFar;
+    let anchor = null, bs = -1e9;
+    for (const a of pool) {
+      if (used.has(a.id) || !(a.slots.includes("m") || a.slots.includes("a"))) continue;
+      if (!a.cats.some(c => c !== "yemek")) continue;
+      if (!farOK && isFar(a)) continue;
+      const s = base(a, a.slots.includes("m") ? "m" : "a");
+      if (s > bs) { bs = s; anchor = a; }
+    }
+    const dayFar = !!anchor && isFar(anchor);
+    if (dayFar) farDays++;
+    /* Gün şehir merkezinden (otel) başlar. Durak sırası merkezden anchor yönüne doğru tek yönlü ilerler:
+       önce yakın yerler, sonra uzaklar. Aksi yöndeki yerler cezalanır, böylece gün gidip gelmez. */
+    let prev = city.center, curD = 0;
+    const anchorD = anchor ? hav(city.center, anchor.ll) : 0;
+    const corridor = anchorD > 6;
+    let anchorIdx = -1;
+    if (anchor) {
+      if (anchor.dur >= 3.5 && seq.indexOf("m") >= 0) anchorIdx = seq.indexOf("m");
+      else if (seq.lastIndexOf("a") >= 0 && anchor.slots.includes("a")) anchorIdx = seq.lastIndexOf("a");
+      else anchorIdx = Math.max(seq.lastIndexOf("m"), 0);
+    }
+    const stops = [];
+    let dropM = false, dropA = false;
+    for (let si = 0; si < seq.length; si++) {
+      const slot = seq[si];
+      if (slot === "m" && dropM) { dropM = false; continue; }
+      if (slot === "a" && dropA) { dropA = false; stops.push({ rest: true, slot, time: times[si] }); continue; }
+      let pick = null, ps = -1e9;
+      const tryPick = (want) => {
+        for (const a of pool) {
+          if (used.has(a.id) || !a.slots.includes(want)) continue;
+          const far = isFar(a);
+          if (far && !dayFar && !farOK) continue;
+          const isAnchor = anchor && a.id === anchor.id;
+          if (isAnchor && si < anchorIdx) continue;
+          let s = base(a, slot);
+          const dist = hav(prev, a.ll);
+          const dC = hav(city.center, a.ll);
+          if (dist < 1.2) s += 1.2;
+          s -= Math.min(dist, 40) * 0.5;
+          s -= Math.min(Math.max(0, curD - dC), 8) * 0.9;
+          if (corridor) s -= Math.min(segKm(a.ll, city.center, anchor.ll), 40) * 0.4;
+          if (isAnchor && si === anchorIdx) s += 6;
+          if (want !== slot) s -= 2;
+          if (s > ps) { ps = s; pick = a; }
+        }
+      };
+      tryPick(slot);
+      if (!pick) for (const alt of (FALL[slot] || [])) { tryPick(alt); if (pick) break; }
+      if (!pick) {
+        if (slot === "t") continue;
+        gaps++; stops.push({ generic: true, slot, time: times[si] }); continue;
+      }
+      used.add(pick.id);
+      prev = pick.ll;
+      curD = hav(city.center, pick.ll);
+      if (slot === "m" && pick.dur >= 4) { if (seq.slice(si + 1).includes("m")) dropM = true; else dropA = true; }
+      stops.push(Object.assign({ slot, time: pick.t || times[si] }, pick));
+    }
+    /* Saatler sıra bozulmadan artsın. Gün doğumu etkinliği (balon) en başa gider. */
+    const sunrise = stops.filter(s => s.time === "Gün doğumu");
+    const rest = stops.filter(s => s.time !== "Gün doğumu");
+    let last = -1;
+    for (const s of rest) {
+      const mm = /^(\d\d):(\d\d)$/.exec(s.time);
+      if (!mm) continue;
+      let m = +mm[1] * 60 + +mm[2];
+      if (m <= last) { m = last + 45; s.time = String(Math.floor(m / 60)).padStart(2, "0") + ":" + String(m % 60).padStart(2, "0"); }
+      last = m;
+    }
+    stops.length = 0; stops.push(...sunrise, ...rest);
+    days.push({ index: d, area: anchor ? anchor.area : "", far: dayFar, stops });
+  }
+  return { season, days, gaps, poolSize: pool.length };
+}
+
+if (typeof module !== "undefined") module.exports = { D, CITIES, planTrip, hav, leg, CATS, SLOTNAME };
+
+// İSTANBUL. Kahvaltı mekanları yemek.com listesinden, diğer yemek mekanları bilinen köklü adreslerden. ap:1 = konum semt düzeyinde yaklaşık.
+// Kahvaltı ve fırın
+P({c:"ist",n:"Emirgan Sütiş",cat:"yemek,huzur",s:"b",d:2,k:2,se:"iysk",w:"scaf",ar:"Emirgan",nh:0,note:"Boğaz’a bakan geniş bahçe. Hafta sonu kalabalık olur, erken gidin.",eat:"Menemen, kol böreği, su böreği, manda kaymağı, bal",ll:[41.1100,29.0560],ap:1});
+P({c:"ist",n:"Hidden Coffee House",cat:"yemek",s:"b",d:1.5,k:2,se:"iysk",w:"scf",ar:"Bebek",nh:0,note:"Bebek’te poşe yumurta, mücver ve menemen.",eat:"Avokadolu poşe yumurta, menemen, mücver, çılbır",ll:[41.0780,29.0430],ap:1});
+P({c:"ist",n:"Simba Boyoz",cat:"yemek",s:"bt",d:1,k:1,se:"iysk",w:"scaf",ar:"Bakırköy",nh:1,note:"İzmir’in boyozu İstanbul’da. Sade, kaşarlı, patlıcanlı çeşitleri.",eat:"Boyoz, haşlanmış yumurta, bal, reçel",ll:[40.9800,28.8700],ap:1});
+P({c:"ist",n:"Kovan Fırın",cat:"yemek",s:"bt",d:1,k:1,se:"iysk",w:"scaf",ar:"Şişli",nh:0,note:"Poğaça, simit ve hamur işleri. Hızlı kahvaltı için.",eat:"Kaşarlı poğaça, simit, serpme kahvaltı",ll:[41.0480,28.9930],ap:1});
+P({c:"ist",n:"Parodia Coffee House & Bistro",cat:"yemek",s:"b",d:1.5,k:2,se:"iysk",w:"scf",ar:"Beşiktaş",nh:0,note:"Ihlamurdere Caddesi’nde ekşi mayalı ekmek ve sahanda yumurta kahvaltısı.",eat:"Dana sosis, sahanda yumurta, ekşi mayalı ekmek, filtre kahve",ll:[41.0480,29.0050],ap:1});
+P({c:"ist",n:"Van Kahvaltı Evi",cat:"yemek",s:"b",d:1.5,k:2,se:"iysk",w:"scaf",ar:"Cihangir",nh:0,note:"Van usulü kahvaltı tabakları ve otlu peynir. Hafta sonu sıra olabilir.",eat:"Otlu peynir, kaymak, bal, menemen, serpme kahvaltı",ll:[41.0330,28.9830],ap:1});
+// Öğle, akşam
+P({c:"ist",n:"Çiya Sofrası",cat:"yemek",s:"ld",d:1.5,k:2,se:"iysk",w:"scaf",ar:"Kadıköy",nh:0,note:"Mevsimlik Anadolu yemekleri tezgâhtan seçilir. Öğle yoğun olur.",eat:"Mevsimlik Anadolu yemekleri, içli köfte, yaprak sarma",ll:[40.9906,29.0242],ap:1});
+P({c:"ist",n:"Sultanahmet Köftecisi Selim Usta",cat:"yemek",s:"l",d:1,k:1,se:"iysk",w:"scaf",ar:"Sultanahmet",nh:0,note:"Köfte, piyaz ve irmik helvası. Turist bölgesinde hızlı öğle yemeği.",eat:"Izgara köfte, piyaz, irmik helvası",ll:[41.0070,28.9760],ap:1});
+P({c:"ist",n:"Hamdi Restaurant",cat:"yemek",s:"ld",d:2,k:3,se:"iysk",w:"scaf",ar:"Eminönü",nh:0,note:"Boğaz ve Haliç manzaralı teras. Kebap ve baklava ünlüdür.",eat:"Antep usulü kebap, fıstıklı baklava, humus",ll:[41.0172,28.9695],ap:1});
+P({c:"ist",n:"Pandeli",cat:"yemek",s:"l",d:1.5,k:3,se:"iysk",w:"sc",ar:"Eminönü",nh:0,note:"Mısır Çarşısı’nın üst katında tarihi bir lokanta.",eat:"Hünkâr beğendi, balık, meze",ll:[41.0166,28.9709],ap:1});
+P({c:"ist",n:"Kanaat Lokantası",cat:"yemek",s:"l",d:1,k:2,se:"iysk",w:"scaf",ar:"Üsküdar",nh:0,note:"Üsküdar’ın eski lokantası. Ev yemekleri ve zeytinyağlılar.",eat:"Ev yemekleri, zeytinyağlılar, tatlılar",ll:[41.0240,29.0170],ap:1});
+P({c:"ist",n:"Balıkçı Sabahattin",cat:"yemek",s:"d",d:2,k:3,se:"iysk",w:"sc",ar:"Sultanahmet",nh:0,note:"Cankurtaran’da eski bir ahşap evde balık. Rezervasyon şart.",eat:"Balık, meze, rakı sofrası",ll:[41.0035,28.9810],ap:1});
+P({c:"ist",n:"Nevizade Meyhaneleri",cat:"yemek",s:"d",d:2.5,k:2,se:"iysk",w:"scf",ar:"Beyoğlu",nh:0,note:"Meze ve balık ağırlıklı İstanbul meyhane geleneği. Hafta sonu rezervasyon yapın.",eat:"Meze, balık, rakı",ll:[41.0345,28.9770],ap:1});
+P({c:"ist",n:"Eminönü Balık Ekmek",cat:"yemek",s:"l",d:1,k:1,se:"iysk",w:"scaf",ar:"Eminönü",nh:0,note:"Rıhtımda balık ekmek. Hızlı ve ucuz.",eat:"Balık ekmek, turşu suyu",ll:[41.0178,28.9738],ap:1});
+P({c:"ist",n:"Ortaköy Kumpir",cat:"yemek",s:"e",d:1,k:1,se:"iys",w:"scaf",ar:"Ortaköy",nh:0,note:"Boğaz Köprüsü ışıkları yanarken oturmak için akşamüstü gelin.",eat:"Kumpir, waffle",ll:[41.0476,29.0267],ap:1});
+// Tatlı, kahve
+P({c:"ist",n:"Karaköy Güllüoğlu",cat:"yemek",s:"t",d:0.5,k:2,se:"iysk",w:"scaf",ar:"Karaköy",nh:0,note:"Baklava ve börek. Tezgâhta ayakta yemek mümkün.",eat:"Baklava, su böreği",ll:[41.0230,28.9770],ap:1});
+P({c:"ist",n:"Hafız Mustafa 1864",cat:"yemek",s:"t",d:0.5,k:2,se:"iysk",w:"scaf",ar:"Eminönü",nh:0,note:"Lokum, baklava ve sütlü tatlılar.",eat:"Lokum, baklava, sütlü tatlılar",ll:[41.0165,28.9715],ap:1});
+P({c:"ist",n:"Kurukahveci Mehmet Efendi",cat:"yemek",s:"t",d:0.5,k:1,se:"iysk",w:"scaf",ar:"Eminönü",nh:0,note:"1871’den beri Türk kahvesi satan dükkan. Hediyelik kahve için.",eat:"Türk kahvesi",ll:[41.0170,28.9700],ap:1});
+P({c:"ist",n:"Mandabatmaz",cat:"yemek",s:"t",d:0.5,k:1,se:"iysk",w:"scf",ar:"Beyoğlu",nh:0,note:"Küçük fincanlarda yoğun Türk kahvesi.",eat:"Türk kahvesi",ll:[41.0330,28.9770],ap:1});
+P({c:"ist",n:"Vefa Bozacısı",cat:"yemek",s:"t",d:0.5,k:1,se:"sk",w:"scaf",ar:"Vefa",nh:1,note:"1876’dan beri boza satan dükkan. Kış aylarında içilir.",eat:"Boza, leblebi",ll:[41.0140,28.9600],ap:1});
+// Gezilecek yerler
+P({c:"ist",n:"Ayasofya ve Sultanahmet Meydanı",cat:"tarih",s:"ma",d:2,k:1,se:"iysk",w:"scaf",ar:"Sultanahmet",nh:0,note:"Sabah erken gidin, öğleye doğru kuyruklar uzuyor. Sultanahmet Camii ve Hipodrom aynı yürüyüşe sığar.",ll:[41.0086,28.9802]});
+P({c:"ist",n:"Topkapı Sarayı ve Harem",cat:"tarih",s:"ma",d:3,k:2,se:"iysk",w:"scaf",ar:"Sultanahmet",nh:0,note:"Harem bölümüne ayrıca zaman ayırın. Avlulardan Boğaz ve Haliç manzarası açılır.",ll:[41.0115,28.9833]});
+P({c:"ist",n:"Yerebatan Sarnıcı",cat:"tarih",s:"a",d:1,k:2,se:"iysk",w:"scaf",ar:"Sultanahmet",nh:0,note:"Yağmurlu günler için iyi bir kapalı durak. Akşama doğru daha sakin.",ll:[41.0084,28.9779]});
+P({c:"ist",n:"Çemberlitaş Hamamı",cat:"huzur",s:"ae",d:2,k:3,se:"iysk",w:"scf",ar:"Sultanahmet",nh:0,note:"1584’te Mimar Sinan’a atfedilen tarihi hamam. Gün boyu yürüdükten sonra dinlenmek için.",ll:[41.0088,28.9708]});
+P({c:"ist",n:"Kapalıçarşı ve Mısır Çarşısı",cat:"tarih",s:"ma",d:2.5,k:1,se:"iysk",w:"scaf",ar:"Eminönü",nh:0,note:"Kapalıçarşı’da pazarlık âdettir. Mısır Çarşısı’nda baharat, lokum ve kuruyemiş.",ll:[41.0107,28.9680]});
+P({c:"ist",n:"Süleymaniye Camii ve Zeyrek",cat:"tarih,huzur",s:"ma",d:2.5,k:0,se:"iysk",w:"scaf",ar:"Eminönü",nh:1,note:"Süleymaniye avlusundan Haliç’e bakın. Zeyrek Camii ve Vefa yürüyüşün devamında.",ll:[41.0162,28.9640]});
+P({c:"ist",n:"Sahaflar Çarşısı",cat:"sanat",s:"m",d:1,k:0,se:"iysk",w:"scf",ar:"Eminönü",nh:1,note:"Beyazıt’taki eski kitap çarşısında nadir basımlar, haritalar ve gravürler.",ll:[41.0105,28.9650],ap:1});
+P({c:"ist",n:"Fener–Balat Sokakları",cat:"tarih,sanat",s:"ma",d:2,k:0,se:"iysk",w:"scaf",ar:"Fener–Balat",nh:1,note:"Antikacılar, kafeler ve boyalı evler. Hafta içi sabah daha sakin.",ll:[41.0290,28.9500],ap:1});
+P({c:"ist",n:"Galata Kulesi ve Karaköy",cat:"tarih",s:"ae",d:2,k:2,se:"iysk",w:"scaf",ar:"Karaköy",nh:0,note:"Kuleye çıkmasanız da Karaköy sokakları galeri ve kahve dolu.",ll:[41.0256,28.9742]});
+P({c:"ist",n:"İstanbul Modern",cat:"sanat",s:"a",d:2,k:2,se:"iysk",w:"scf",ar:"Karaköy",nh:0,note:"Karaköy rıhtımında, çağdaş Türk sanatına odaklı müze.",ll:[41.0268,28.9822],ap:1});
+P({c:"ist",n:"Pera Müzesi ve İstiklal Caddesi",cat:"sanat",s:"a",d:2.5,k:1,se:"iysk",w:"scaf",ar:"Beyoğlu",nh:0,note:"Nostaljik tramvayla caddeyi geçin. Osman Hamdi Bey’in Kaplumbağa Terbiyecisi Pera Müzesi’nde.",ll:[41.0316,28.9753],ap:1});
+P({c:"ist",n:"Eyüp Sultan ve Pierre Loti Tepesi",cat:"huzur,doga",s:"a",d:2.5,k:1,se:"iysk",w:"scaf",ar:"Eyüp",nh:0,note:"Teleferikle Pierre Loti’ye çıkıp Haliç manzarasında çay için.",ll:[41.0484,28.9340],ap:1});
+P({c:"ist",n:"Rahmi M. Koç Müzesi",cat:"tarih",s:"a",d:2.5,k:2,se:"iysk",w:"caf",ar:"Haliç",nh:0,note:"Hasköy’de sanayi ve ulaşım tarihi. Arabalar, gemiler ve bir denizaltı çocuklarla da keyifli.",ll:[41.0420,28.9490],ap:1});
+P({c:"ist",n:"Boğaz Vapur Turu",cat:"doga",s:"ma",d:3,k:1,se:"iysk",w:"scaf",ar:"Boğaz",nh:0,note:"Eminönü’nden Anadolu Kavağı’na. En ucuz Boğaz turu. Kışın ceket şart.",ll:[41.0175,28.9730],ap:1});
+P({c:"ist",n:"Dolmabahçe Sarayı",cat:"tarih",s:"m",d:2,k:2,se:"iysk",w:"scaf",ar:"Boğaz",nh:0,note:"Selamlık ve Harem bölümleri rehberli turla gezilir. Saatleri önceden kontrol edin.",ll:[41.0392,29.0007]});
+P({c:"ist",n:"Rumeli Hisarı ve Bebek",cat:"tarih,doga",s:"ma",d:2,k:1,se:"iys",w:"scaf",ar:"Boğaz",nh:0,note:"Hisarın burçlarından Boğaz’ı izleyin, Bebek’te badem ezmesi.",ll:[41.0847,29.0567]});
+P({c:"ist",n:"Moda Sahili ve Çay Bahçeleri",cat:"huzur",s:"ae",d:1.5,k:1,se:"iysk",w:"scaf",ar:"Kadıköy",nh:0,note:"Gün batımı, martılar ve rahat bir Kadıköy atmosferi.",ll:[40.9857,29.0258],ap:1});
+P({c:"ist",n:"Kadıköy Çarşısı",cat:"yemek",s:"a",d:1.5,k:1,se:"iysk",w:"scaf",ar:"Kadıköy",nh:0,note:"Peynir, zeytin ve turşu tezgâhları.",ll:[40.9900,29.0250],ap:1});
+P({c:"ist",n:"Kız Kulesi ve Üsküdar Sahili",cat:"tarih,huzur",s:"ae",d:2,k:1,se:"iysk",w:"scaf",ar:"Üsküdar",nh:0,note:"Sahilden Kız Kulesi’ne bakmak ücretsiz.",ll:[41.0211,29.0041]});
+P({c:"ist",n:"Kuzguncuk Mahalle Yürüyüşü",cat:"tarih,huzur",s:"ma",d:2,k:0,se:"iys",w:"scaf",ar:"Üsküdar",nh:1,note:"Cami, kilise ve sinagogun komşu olduğu eski Boğaz mahallesi.",ll:[41.0350,29.0280],ap:1});
+P({c:"ist",n:"Büyük Çamlıca Tepesi",cat:"huzur,doga",s:"a",d:1.5,k:0,se:"iysk",w:"scaf",ar:"Üsküdar",nh:0,note:"Şehrin geniş panoraması. Gün batımına yakın saatler güzel.",ll:[41.0270,29.0690],ap:1});
+P({c:"ist",n:"Büyükada’da Bisiklet",cat:"macera,doga",s:"m",d:4,k:2,se:"iys",w:"scaf",ar:"Adalar",nh:0,note:"Adada motorlu özel araç yok. Bisiklet kiralayıp ada yolunu dolaşın. Vapurla gidilir.",ll:[40.8700,29.1300],ap:1});
+P({c:"ist",n:"Belgrad Ormanı Bentler Yürüyüşü",cat:"doga,macera",s:"m",d:3,k:0,se:"iys",w:"scaf",ar:"Belgrad Ormanı",nh:1,note:"Şehrin yeşil nefesi. Hafta sonları kalabalık, hafta içi çok daha sakin.",ll:[41.1900,28.9900],ap:1});
+
+// KONYA. Mekan adları yemek.com listelerinden. ap:1 = konum semt düzeyinde yaklaşık.
+// Kahvaltı, etli ekmek, fırın kebabı
+P({c:"kon",n:"Yağ Somunu Pideci Hasan Şendağlı",cat:"yemek",s:"bl",d:1,k:1,se:"iysk",w:"scaf",ar:"Aziziye",nh:0,note:"Yağ somunu Konya’ya özgü bir hamur işi. Kavurmalı ya da sade yenir.",eat:"Kavurmalı yağ somunu, klasik yağ somunu, atom",ll:[37.8700,32.4980],ap:1});
+P({c:"kon",n:"Hasan Şendağlı Yağ Somunu (Aziziye)",cat:"yemek",s:"bt",d:1,k:1,se:"iysk",w:"scaf",ar:"Aziziye",nh:0,note:"Mevlana Müzesi’ne yürüme mesafesinde. Höşmerim ve sac arası da burada.",eat:"Yağ somunu, höşmerim, sac arası",ll:[37.8715,32.5010],ap:1});
+P({c:"kon",n:"Gonya Tandır Evi",cat:"yemek",s:"bld",d:1.5,k:2,se:"iysk",w:"scaf",ar:"Horozluhan",nh:1,note:"Tandır böreği kavurmalı, pastırmalı, küflü peynirli ve helvalı çeşitleriyle yapılır.",eat:"Kavurmalı tandır böreği, pastırmalı tandır, küflü peynirli tandır, helvalı tandır",ll:[37.9050,32.4750],ap:1});
+P({c:"kon",n:"Hich Hotel Kahvaltı Salonu",cat:"yemek",s:"b",d:1.5,k:2,se:"iysk",w:"scf",ar:"Aziziye",nh:0,note:"Mevlana Müzesi’ne yakın otelde kahvaltı seçenekleri. Sabah erken ziyaretlere uygun.",eat:"Serpme kahvaltı, çay, kahve",ll:[37.8720,32.5000],ap:1});
+P({c:"kon",n:"Tatlıdil EtliEkmek Yazır",cat:"yemek",s:"bl",d:1,k:1,se:"iysk",w:"scaf",ar:"Yazır",nh:1,note:"Konya böreği ve bıçak arası. Yerel halkın sabah tercihi.",eat:"Etli ekmek, bıçak arası, Konya böreği",ll:[37.9100,32.5000],ap:1});
+P({c:"kon",n:"CelalBey Etliekmek 1985",cat:"yemek",s:"ld",d:1,k:1,se:"iysk",w:"scaf",ar:"Aziziye",nh:0,note:"Mevlana yakınında köklü bir etli ekmek salonu. Mevlana pide ve sac arası da var.",eat:"Etli ekmek, bıçak arası, Mevlana pide, bamya çorbası, sac arası",ll:[37.8720,32.5000],ap:1});
+P({c:"kon",n:"Karagöz Etliekmek",cat:"yemek",s:"l",d:1,k:1,se:"iysk",w:"scaf",ar:"Aziziye",nh:0,note:"Aziziye Caddesi’nde pide ve börek çeşitleriyle etli ekmek.",eat:"Etli ekmek, bıçak arası, pide, börek",ll:[37.8725,32.4995],ap:1});
+P({c:"kon",n:"Halk Etliekmek",cat:"yemek",s:"ld",d:1,k:1,se:"iysk",w:"scaf",ar:"Şems-i Tebrizi",nh:0,note:"Etli ekmeğin yanında fırın kebabı ve farklı tatlılar.",eat:"Etli ekmek, bıçak arası, Konya böreği, fırın kebabı, bamya çorbası",ll:[37.8750,32.4930],ap:1});
+P({c:"kon",n:"Cemo Etliekmek (Meram)",cat:"yemek",s:"ld",d:1.5,k:2,se:"iysk",w:"scaf",ar:"Meram",nh:0,note:"Etli ekmek, tirit ve fırın kebabı bir arada. Aile sofrası olarak rahat.",eat:"Etli ekmek, bıçak arası, Konya böreği, bamya çorbası, fırın kebabı, tirit, kuzu şiş",ll:[37.8640,32.4650],ap:1});
+P({c:"kon",n:"Havzan Etli Ekmek",cat:"yemek",s:"ld",d:1,k:1,se:"iysk",w:"scaf",ar:"Meram",nh:0,note:"Kuşbaşılı ve peynirli etli ekmek çeşitleri. Yeni Meram Caddesi üzerinde.",eat:"Etli ekmek, kuşbaşılı, peynirli, bamya çorbası, kebap",ll:[37.8330,32.4440],ap:1});
+P({c:"kon",n:"Nurkevser Etliekmek Salonu",cat:"yemek",s:"l",d:1,k:1,se:"iysk",w:"scaf",ar:"Meram",nh:1,note:"Havzan’da etli ekmek ve ızgara seçenekleri.",eat:"Etli ekmek, bıçak arası, ızgara",ll:[37.8340,32.4460],ap:1});
+P({c:"kon",n:"Bolu Lokantası",cat:"yemek",s:"l",d:1,k:1,se:"iysk",w:"scaf",ar:"Aziziye",nh:0,note:"Aziziye Caddesi’nde etli ekmek.",eat:"Etli ekmek",ll:[37.8720,32.4990],ap:1});
+P({c:"kon",n:"Ali Baba Fırın Kebap",cat:"yemek",s:"ld",d:1.5,k:2,se:"iysk",w:"scaf",ar:"Şems-i Tebrizi",nh:0,note:"Konya’nın fırın kebabı kuzu etiyle yapılır. Öğleden sonra bitebilir, erken gidin.",eat:"Fırın kebabı",ll:[37.8750,32.4935],ap:1});
+P({c:"kon",n:"Hacı Şükrü Fırın Kebap",cat:"yemek",s:"ld",d:1.5,k:2,se:"iysk",w:"scaf",ar:"Ferhuniye",nh:0,note:"Kuzu fırın kebabı. Ali Baba ile birlikte bölgenin bilinen iki yerinden biri.",eat:"Kuzu fırın kebabı",ll:[37.8780,32.4880],ap:1});
+P({c:"kon",n:"Kabakçı Ali Lokantası",cat:"yemek",s:"l",d:1,k:1,se:"iysk",w:"scaf",ar:"Devri Cedid",nh:1,note:"Tirit, Konya mutfağının eski bir yemeği. Ekmek üstüne et ve yoğurtla gelir.",eat:"Tirit",ll:[37.8850,32.4800],ap:1});
+P({c:"kon",n:"Tiritçi Mithat",cat:"yemek",s:"l",d:1,k:1,se:"iysk",w:"scaf",ar:"Aziziye",nh:1,note:"Pide üstünde güveçte kıyma kuzu eti, maydanoz ve yoğurtla.",eat:"Tirit",ll:[37.8730,32.4990],ap:1});
+P({c:"kon",n:"Örnek Lokantası",cat:"yemek",s:"l",d:1,k:1,se:"iysk",w:"scaf",ar:"Şükran",nh:1,note:"Ulusoy İş Hanı’nın içinde, çarşı esnafının yeri. Tahinli pide ve şerbet.",eat:"Tahinli pide, şerbet",ll:[37.8670,32.4970],ap:1});
+P({c:"kon",n:"Arden Çorba & Köfte",cat:"yemek",s:"bl",d:1,k:1,se:"iysk",w:"scaf",ar:"Feritpaşa",nh:1,note:"Konya’nın bamya çorbası ve arabaşı çorbası. Kış günleri için iyi.",eat:"Bamya çorbası, arabaşı çorbası, köfte",ll:[37.8960,32.4880],ap:1});
+P({c:"kon",n:"Köfteci Sofu",cat:"yemek",s:"ld",d:1,k:1,se:"iysk",w:"scaf",ar:"Horozluhan",nh:0,note:"Kuzu köfte ve şiş. Sütlaç da var.",eat:"Kuzu köfte, şiş, sütlaç",ll:[37.9070,32.4770],ap:1});
+P({c:"kon",n:"Ciğerci Orhan",cat:"yemek",s:"ld",d:1,k:1,se:"iysk",w:"scf",ar:"Horozluhan",nh:1,note:"Ciğer şiş, yürek şiş ve fındık lahmacun.",eat:"Ciğer şiş, yürek şiş, fındık lahmacun",ll:[37.9000,32.4800],ap:1});
+P({c:"kon",n:"Hacıbaba Tavuk Kebap",cat:"yemek",s:"ld",d:1,k:1,se:"iysk",w:"scaf",ar:"Horozluhan",nh:0,note:"Konya’da tavuk kebabıyla bilinen bir mekan.",eat:"Tavuk kebap",ll:[37.9040,32.4780],ap:1});
+P({c:"kon",n:"Somatçı Fihi Ma Fih",cat:"yemek",s:"d",d:2,k:3,se:"iysk",w:"sc",ar:"Aziziye",nh:0,note:"Mevlevi mutfağından esinlenen yemekler. Bademli köfte, bulgur aşı ve yemen kahveli et.",eat:"Bademli köfte, bulgur aşı, yemen kahveli et, incirli et, kayısılı kuzu gerdan, sirkencübin şerbeti",ll:[37.8725,32.5000],ap:1});
+P({c:"kon",n:"Özgür Unlu Mamülleri",cat:"yemek",s:"t",d:0.5,k:1,se:"iysk",w:"scaf",ar:"Selçuk",nh:0,note:"Profiterol ve sac arası. Çay molası için.",eat:"Profiterol, sac arası",ll:[37.8590,32.4620],ap:1});
+P({c:"kon",n:"Fera Coffee Depo No 4",cat:"yemek",s:"t",d:1,k:2,se:"iysk",w:"scf",ar:"Şükran",nh:0,note:"Mevlana Caddesi’nde kahve molası.",eat:"Americano, filtre kahve",ll:[37.8670,32.4980],ap:1});
+// Gezilecek yerler
+P({c:"kon",n:"Mevlana Müzesi",cat:"tarih,huzur",s:"ma",d:1.5,k:1,se:"iysk",w:"scaf",ar:"Mevlana",nh:0,note:"Yeşil kubbe ve semahane. Sabah erken ya da akşama doğru daha sakin.",ll:[37.8706,32.5047]});
+P({c:"kon",n:"Mevlana Çevresinde Akşam Yürüyüşü",cat:"huzur",s:"e",d:1,k:0,se:"iysk",w:"scaf",ar:"Mevlana",nh:0,note:"Akşam ışıklarında kubbe ve minareler. Çarşıdan lokum ve Mevlana şekeri alınabilir.",ll:[37.8710,32.5040],ap:1});
+P({c:"kon",n:"Şeb-i Arus Anma Törenleri",cat:"huzur,sanat",s:"e",d:3,k:1,se:"k",w:"scaf",ar:"Mevlana",nh:1,note:"Aralık ayında, 17 Aralık’taki vuslat yıldönümüne doğru yoğunlaşan törenler. Konaklama erken dolar.",ll:[37.8700,32.5000],ap:1,mon:[12]});
+P({c:"kon",n:"Alaaddin Tepesi ve Camii",cat:"tarih",s:"mae",d:1.5,k:0,se:"iysk",w:"scaf",ar:"Alaaddin",nh:0,note:"Selçuklu başkentinin merkezi. Tepe parkı gün batımında güzel.",ll:[37.8720,32.4850],ap:1});
+P({c:"kon",n:"Karatay Medresesi (Çini Eserleri Müzesi)",cat:"sanat,tarih",s:"ma",d:1.5,k:1,se:"iysk",w:"scaf",ar:"Alaaddin",nh:1,note:"Turkuaz çinili yıldızlı kubbe ve Selçuklu çini sanatı. Kalabalık olmaz.",ll:[37.8730,32.4860],ap:1});
+P({c:"kon",n:"İnce Minare (Taş ve Ahşap Eserleri Müzesi)",cat:"tarih,sanat",s:"a",d:1,k:1,se:"iysk",w:"scaf",ar:"Alaaddin",nh:1,note:"Selçuklu taş oymacılığı ve ahşap işçiliği. Taç kapıdaki süslemeye bakın.",ll:[37.8735,32.4840],ap:1});
+P({c:"kon",n:"Konya Kapalı Çarşısı ve Bedesten",cat:"tarih",s:"a",d:1.5,k:1,se:"iysk",w:"scaf",ar:"Mevlana",nh:0,note:"El sanatları ve gündelik çarşı hayatı. Öğleden sonra kalabalıklaşır.",ll:[37.8700,32.4940],ap:1});
+P({c:"kon",n:"Meram Bağları",cat:"doga,huzur",s:"ae",d:2,k:1,se:"iys",w:"scaf",ar:"Meram",nh:0,note:"Eski Konya bağ evlerinin bulunduğu yeşil semt. Yürüyüş ve çay için.",ll:[37.8350,32.4400],ap:1});
+P({c:"kon",n:"Sille Köyü",cat:"tarih,doga",s:"ma",d:3,k:1,se:"iysk",w:"scaf",ar:"Sille",nh:1,note:"Aya Eleni Kilisesi, kayalara oyulmuş evler ve dar sokaklar. Merkezden kısa bir araç yolu.",ll:[37.9264,32.4167]});
+P({c:"kon",n:"Çatalhöyük",cat:"tarih",s:"m",d:3.5,k:1,se:"iysk",w:"scaf",ar:"Çatalhöyük",nh:1,note:"Yaklaşık 9 bin yıllık Neolitik yerleşim, UNESCO listesinde. Araç gerekir.",ll:[37.6667,32.8281]});
+P({c:"kon",n:"Konya Tropikal Kelebek Bahçesi",cat:"doga",s:"a",d:1.5,k:2,se:"iysk",w:"caf",ar:"Selçuklu",nh:0,note:"Kapalı serada kelebekler. Çocuklu aileler ve yağmurlu günler için iyi.",ll:[37.9500,32.5500],ap:1});
+P({c:"kon",n:"Koyunoğlu Müzesi",cat:"sanat,tarih",s:"a",d:1.5,k:1,se:"iysk",w:"scaf",ar:"Alaaddin",nh:1,note:"Eski eserler, etnografya ve doğa tarihi bir arada. Çoğu gün sakin.",ll:[37.8780,32.4880],ap:1});
+
+// KAPADOKYA. Ürgüp restoran listesi yemek.com kaynaklı. ap:1 = konum yaklaşık.
+// Yemek (Ürgüp)
+P({c:"cap",n:"Sofra Restaurant",cat:"yemek",s:"ld",d:1.5,k:2,se:"iysk",w:"scaf",ar:"Ürgüp",nh:0,note:"Testi kebabı ve güveç. Testi masada kırılarak servis edilir.",eat:"Testi kebabı, güveç, et yemekleri",ll:[38.6314,34.9131],ap:1});
+P({c:"cap",n:"Dumanaltı Kebap",cat:"yemek",s:"ld",d:1,k:1,se:"iysk",w:"scaf",ar:"Ürgüp",nh:0,note:"Ürgüp çarşısında kebap.",eat:"Kebap",ll:[38.6310,34.9125],ap:1});
+P({c:"cap",n:"Ürgüp Pide ve Kebap Salonu",cat:"yemek",s:"bl",d:1,k:1,se:"iysk",w:"scaf",ar:"Ürgüp",nh:0,note:"Otogar yanında pide ve kebap. Ekonomik öğle seçeneği.",eat:"Pide, kebap",ll:[38.6330,34.9110],ap:1});
+P({c:"cap",n:"Sade Meze Kapadokya",cat:"yemek",s:"d",d:2,k:2,se:"iysk",w:"scf",ar:"Ürgüp",nh:0,note:"Meze ağırlıklı akşam yemeği.",eat:"Mezeler",ll:[38.6314,34.9140],ap:1});
+P({c:"cap",n:"Tandır House Restaurant",cat:"yemek",s:"ld",d:1.5,k:2,se:"iysk",w:"scaf",ar:"Ürgüp",nh:0,note:"Tandır yemekleri ve etler.",eat:"Tandır, et yemekleri",ll:[38.6330,34.9200],ap:1});
+P({c:"cap",n:"Deve Hanı Cappadocia",cat:"yemek",s:"d",d:2,k:3,se:"iysk",w:"sc",ar:"Ürgüp",nh:0,note:"Türk mutfağı ve et yemekleri.",eat:"Et yemekleri, Türk mutfağı",ll:[38.6310,34.9140],ap:1});
+P({c:"cap",n:"Mel’s Cappadocia Restaurant",cat:"yemek",s:"d",d:2,k:3,se:"iysk",w:"sc",ar:"Ürgüp",nh:0,note:"İstiklal Caddesi üzerinde et yemekleri ve dünya mutfağı.",eat:"Et yemekleri, Türk ve dünya mutfağı",ll:[38.6320,34.9100],ap:1});
+P({c:"cap",n:"Revithia (Kayakapı)",cat:"yemek,huzur",s:"d",d:2,k:3,se:"iysk",w:"sc",ar:"Ürgüp",nh:0,note:"Kayakapı’da modern Akdeniz mutfağı.",eat:"Modern Akdeniz mutfağı",ll:[38.6346,34.9059]});
+P({c:"cap",n:"Ziggy’s Cafe Restaurant",cat:"yemek",s:"td",d:1.5,k:2,se:"iysk",w:"scf",ar:"Ürgüp",nh:0,note:"Mezeler ve kahve molası.",eat:"Mezeler, kahve",ll:[38.6300,34.9150],ap:1});
+// Göreme çevresi
+P({c:"cap",n:"Sıcak Hava Balonu",cat:"macera,doga",s:"m",d:1.5,k:3,se:"iysk",w:"scaf",ar:"Göreme",nh:0,note:"Rüzgâr ve hava durumuna göre iptal olabilir. Programda yedek gün bırakın.",ll:[38.6431,34.8289],t:"Gün doğumu",ap:1});
+P({c:"cap",n:"Göreme Açık Hava Müzesi",cat:"tarih",s:"m",d:2.5,k:2,se:"iysk",w:"scaf",ar:"Göreme",nh:0,note:"Freskli kaya kiliseler. Öğleden önce daha sakin.",ll:[38.6436,34.8453],ap:1});
+P({c:"cap",n:"Güvercinlik Vadisi Yürüyüşü",cat:"doga,macera",s:"m",d:3,k:0,se:"iys",w:"scaf",ar:"Uçhisar",nh:0,note:"Güvercin kümesleri ve kaya oyma yamaçlar. Patika kolay ama gölgesiz, su alın.",ll:[38.6260,34.8110],ap:1});
+P({c:"cap",n:"Uçhisar Kalesi",cat:"tarih,doga",s:"a",d:1.5,k:1,se:"iysk",w:"scaf",ar:"Uçhisar",nh:0,note:"Bölgenin en yüksek noktalarından panorama. Gün batımına yakın çıkın.",ll:[38.6289,34.8033]});
+P({c:"cap",n:"Aşk Vadisi",cat:"doga",s:"a",d:1.5,k:0,se:"iys",w:"scaf",ar:"Göreme",nh:0,note:"Dikilitaş biçimli peribacaları. Kısa ve kolay bir yürüyüş.",ll:[38.6580,34.8400],ap:1});
+P({c:"cap",n:"Kızılçukur Vadisi Gün Batımı",cat:"doga",s:"e",d:2,k:0,se:"iys",w:"scaf",ar:"Göreme",nh:1,note:"Kızıl kayalıklar üzerinden batan güneş. Patika kaygan olabilir, sağlam ayakkabı giyin.",ll:[38.6490,34.8330],ap:1});
+P({c:"cap",n:"Zelve Açık Hava Müzesi",cat:"tarih,doga",s:"a",d:2,k:1,se:"iysk",w:"scaf",ar:"Zelve–Çavuşin",nh:0,note:"Terk edilmiş kaya köyü ve peribacaları.",ll:[38.667,34.833]});
+P({c:"cap",n:"Çavuşin Eski Köy",cat:"tarih,doga",s:"ma",d:1.5,k:0,se:"iysk",w:"scaf",ar:"Zelve–Çavuşin",nh:1,note:"Terk edilmiş mağara evler ve kilise. Kalabalıktan uzak.",ll:[38.6730,34.8340],ap:1});
+P({c:"cap",n:"Avanos Çömlek Atölyesi",cat:"sanat",s:"a",d:2,k:2,se:"iysk",w:"scaf",ar:"Avanos",nh:0,note:"Kızılırmak’ın kırmızı çamuruyla yüzyıllık çömlekçilik. Kendi kabınızı yapabilirsiniz.",ll:[38.715,34.8467]});
+P({c:"cap",n:"Yıldız Gözlemi",cat:"doga",s:"e",d:1.5,k:0,se:"iysk",w:"scaf",ar:"Uçhisar",nh:1,note:"Işık kirliliği az, açık alanlar bol. Ay’ın olmadığı geceler daha iyi.",ll:[38.6289,34.8033],ap:1});
+P({c:"cap",n:"ATV ile Gün Batımı Turu",cat:"macera",s:"e",d:1.5,k:2,se:"iysk",w:"scf",ar:"Göreme",nh:0,note:"Kısa, rehberli ve eğlenceli bir gün batımı rotası.",ll:[38.6431,34.8289],ap:1});
+P({c:"cap",n:"Atla Vadi Turu",cat:"macera",s:"ae",d:1.5,k:2,se:"iys",w:"scf",ar:"Göreme",nh:1,note:"Kızılçukur ve Güvercinlik vadilerinde rehberli, başlangıç seviyesine uygun.",ll:[38.6431,34.8289],ap:1});
+P({c:"cap",n:"Karlı Peribacaları",cat:"doga,huzur",s:"ma",d:2,k:0,se:"k",w:"scaf",ar:"Göreme",nh:0,note:"Kışın ziyaretçi azalır, kar altında peribacaları bambaşka görünür. Kalın giyinin.",ll:[38.6431,34.8289],ap:1});
+// Güney ve çevre
+P({c:"cap",n:"Derinkuyu Yeraltı Şehri",cat:"tarih",s:"m",d:2,k:2,se:"iysk",w:"scaf",ar:"Derinkuyu–Kaymaklı",nh:0,note:"Çok katlı yeraltı şehri. Geçitler dar, içerisi serin.",ll:[38.3736,34.7347]});
+P({c:"cap",n:"Kaymaklı Yeraltı Şehri",cat:"tarih",s:"a",d:1.5,k:2,se:"iysk",w:"scaf",ar:"Derinkuyu–Kaymaklı",nh:0,note:"Derinkuyu ile aynı gün gezilebilir.",ll:[38.4614,34.7539],ap:1});
+P({c:"cap",n:"Ihlara Vadisi Yürüyüşü",cat:"doga,tarih,macera",s:"m",d:4,k:1,se:"iys",w:"scaf",ar:"Ihlara",nh:1,note:"Melendiz Çayı boyunca kayalara oyulmuş kiliseler. Vadi yaklaşık 14 km, yürünen bölüm 3–4 saat.",ll:[38.2467,34.3069],ap:1});
+P({c:"cap",n:"Mustafapaşa Rum Evleri",cat:"tarih,sanat",s:"a",d:1.5,k:0,se:"iysk",w:"scaf",ar:"Ürgüp",nh:1,note:"Süslü taş işçiliğiyle eski Rum köyü. Sakin ve fotoğrafik.",ll:[38.5806,34.9256],ap:1});
+P({c:"cap",n:"Hacıbektaş Veli Anma Törenleri",cat:"huzur,sanat",s:"a",d:3,k:0,se:"y",w:"scaf",ar:"Hacıbektaş",nh:1,note:"Her yıl Ağustos ortasında yapılan semah ve kültür etkinlikleri.",ll:[38.9436,34.5597],mon:[8]});
+
+// İZMİR. Mekan adları yemek.com listelerinden. ap:1 = konum semt düzeyinde yaklaşık.
+// Kahvaltı
+P({c:"izm",n:"Alsancak Dostlar Boyoz Fırını",cat:"yemek",s:"bt",d:1,k:1,se:"iysk",w:"scaf",ar:"Alsancak",nh:0,note:"İzmir’in sabah klasiği boyoz ve fırında yumurta. Sade, peynirli, enginarlı çeşitleri var.",eat:"Boyoz, fırında yumurta, çay",ll:[38.4350,27.1450],ap:1});
+P({c:"izm",n:"Küçükyalı Gevrek Fırını",cat:"yemek",s:"bt",d:0.5,k:1,se:"iysk",w:"scaf",ar:"Mithatpaşa",nh:1,note:"Sıcak gevrek ve İzmir tulum peyniri.",eat:"Gevrek, tulum peyniri",ll:[38.4010,27.0850],ap:1});
+P({c:"izm",n:"Tuzu Biberi Kahvaltı Evi",cat:"yemek",s:"b",d:1.5,k:2,se:"iysk",w:"scaf",ar:"Bostanlı",nh:0,note:"Karşıyaka tarafında. Tulum peyniri, çam balı ve muhlama.",eat:"Tulum peyniri, çam balı, muhlama, atom",ll:[38.4560,27.0950],ap:1});
+P({c:"izm",n:"Konya Mandırası Kahvaltı Salonu",cat:"yemek",s:"b",d:1.5,k:1,se:"iysk",w:"scaf",ar:"Yenidoğan",nh:1,note:"Bal-kaymak, menemen ve kavurmalı yumurta.",eat:"Bal ve kaymak, menemen, kavurmalı yumurta, reçeller",ll:[38.4000,27.1130],ap:1});
+P({c:"izm",n:"Köyüm Bahçe Restoran",cat:"yemek,huzur",s:"b",d:2,k:2,se:"iys",w:"scaf",ar:"Bornova",nh:1,note:"Yaka Mahallesi’nde bahçede kahvaltı. Köy balı, manda kaymağı ve ev yapımı reçeller.",eat:"Manda kaymağı, köy balı, tulum peyniri, ev yapımı reçeller",ll:[38.4700,27.2400],ap:1});
+P({c:"izm",n:"Denizaltı Cafe",cat:"yemek,huzur",s:"b",d:2,k:2,se:"iys",w:"scaf",ar:"Urla",nh:1,note:"Urla İskele’de parkta deniz kenarında kahvaltı.",eat:"Bal, kaymak, ev yapımı reçel, omlet, kumru, simit",ll:[38.3590,26.7390],ap:1});
+P({c:"izm",n:"Bumba Breakfast Club",cat:"yemek",s:"b",d:1.5,k:2,se:"iysk",w:"scf",ar:"Alaçatı",nh:0,note:"Alaçatı sokaklarında kekikli kızarmış ekmek ve yaklaşık on çeşit reçel.",eat:"Kekikli biberli kızarmış ekmek, tahin pekmez, otlu omlet, reçeller",ll:[38.2814,26.3742],ap:1});
+P({c:"izm",n:"Çeşme Bazlama Kahvaltı",cat:"yemek",s:"b",d:1.5,k:2,se:"iysk",w:"scaf",ar:"Çeşme",nh:0,note:"Bazlama, katmer ve sınırsız çay.",eat:"Bazlama, katmer, ev yapımı reçeller, menemen, acuka",ll:[38.3300,26.3100],ap:1});
+P({c:"izm",n:"Noni’s House",cat:"yemek,huzur",s:"b",d:2,k:3,se:"iys",w:"sc",ar:"Çeşme",nh:1,note:"Ovacık’ta bahçeli köy evi. Otlu börek ve Ege yemekleri.",eat:"Otlu börek, reçeller, pişi, sucuklu yumurta, söğüş",ll:[38.2900,26.3200],ap:1});
+// Öğle ve akşam
+P({c:"izm",n:"Hisarönü Söğüşçüsü Mustafa Usta",cat:"yemek",s:"l",d:1,k:1,se:"iysk",w:"sf",ar:"Hisarönü",nh:1,note:"Söğüş dürüm. Şalgamla birlikte İzmir’in sokak lezzeti.",eat:"Söğüş dürüm, şalgam",ll:[38.4180,27.1300],ap:1});
+P({c:"izm",n:"Söğüşçü Niğdeli Muammer Usta",cat:"yemek",s:"l",d:1,k:1,se:"iysk",w:"sf",ar:"Hurşidiye",nh:1,note:"Söğüş ve dürüm söğüş. Yerel halkın bildiği bir adres.",eat:"Söğüş, dürüm söğüş",ll:[38.4170,27.1340],ap:1});
+P({c:"izm",n:"Kumrucu Apo",cat:"yemek",s:"l",d:0.5,k:1,se:"iysk",w:"scaf",ar:"Yenigün",nh:0,note:"İzmir kumru, karışık ya da kaşarlı.",eat:"Kumru",ll:[38.4175,27.1280],ap:1});
+P({c:"izm",n:"Kardeşler Büfe",cat:"yemek",s:"l",d:0.5,k:1,se:"iysk",w:"scaf",ar:"Alsancak",nh:0,note:"Alsancak’ta kumru.",eat:"Kumru",ll:[38.4340,27.1440],ap:1});
+P({c:"izm",n:"Bizim Lokanta",cat:"yemek",s:"ld",d:1.5,k:2,se:"iysk",w:"scaf",ar:"Konak",nh:0,note:"Balık çorbası, nohutlu işkembe ve enginar tatlısı.",eat:"Balık çorbası, nohutlu işkembe, enginar tatlısı",ll:[38.4190,27.1290],ap:1});
+P({c:"izm",n:"Balmumu Lokanta",cat:"yemek",s:"ld",d:2,k:2,se:"iysk",w:"scaf",ar:"Alsancak",nh:0,note:"Zeytinyağlı tabakları ve keşkek.",eat:"Zeytinyağlı tabağı, keşkek, dana eti ve pilav",ll:[38.4330,27.1410],ap:1});
+P({c:"izm",n:"Alsancak Midye Evi",cat:"yemek",s:"d",d:1,k:2,se:"iysk",w:"scaf",ar:"Alsancak",nh:0,note:"Midye dolma ve ekmek arası sardalya. Akşam yemeğinden önce ya da sonra.",eat:"Midye dolma, ekmek arası sardalya",ll:[38.4340,27.1450],ap:1});
+P({c:"izm",n:"Kartal Kokoreç",cat:"yemek",s:"d",d:0.5,k:1,se:"iysk",w:"sf",ar:"Bornova",nh:0,note:"İzmir usulü kokoreç. Gece geç saatlere kadar açık.",eat:"Kokoreç",ll:[38.4620,27.2200],ap:1});
+P({c:"izm",n:"Kokoreççi Asım Usta",cat:"yemek",s:"d",d:0.5,k:1,se:"iysk",w:"sf",ar:"Bornova",nh:1,note:"Ekmek arası kokoreç.",eat:"Kokoreç",ll:[38.4630,27.2180],ap:1});
+P({c:"izm",n:"Beğendik Abi",cat:"yemek",s:"ld",d:1.5,k:2,se:"iysk",w:"scaf",ar:"Urla",nh:1,note:"Urla mutfağı: çalkama, yoğurtlu pazı ve Urla güveci.",eat:"Çalkama, yoğurtlu pazı, baklalı enginar, etli şevketibostan, Urla güveci",ll:[38.3228,26.7650],ap:1});
+// Tatlı, kahve
+P({c:"izm",n:"Meşhur Hisarönü Şambalicisi",cat:"yemek",s:"t",d:0.5,k:1,se:"iysk",w:"scaf",ar:"Hisarönü",nh:0,note:"Şambali, İzmir’e özgü irmik tatlısı. Kaymaklı ve tarçınlı çeşidi var.",eat:"Şambali, kaymaklı tarçınlı şambali",ll:[38.4175,27.1295],ap:1});
+P({c:"izm",n:"Çelebi Unlu Mamülleri",cat:"yemek",s:"t",d:0.5,k:1,se:"iysk",w:"scaf",ar:"Alsancak",nh:0,note:"İzmir bombası, kremalı çikolata dolgulu hamur tatlısı.",eat:"İzmir bombası",ll:[38.4345,27.1450],ap:1});
+P({c:"izm",n:"Süt Çiçeği",cat:"yemek",s:"t",d:0.5,k:1,se:"iysk",w:"scaf",ar:"Konak",nh:0,note:"Kazandibi, sade ve bademli, damla sakızlı.",eat:"Kazandibi",ll:[38.4180,27.1290],ap:1});
+P({c:"izm",n:"Kahveci Ömer Usta",cat:"yemek",s:"t",d:0.5,k:1,se:"iysk",w:"scaf",ar:"Hisarönü",nh:1,note:"Türk kahvesi ve mini lokum ikramı.",eat:"Türk kahvesi, lokum",ll:[38.4170,27.1300],ap:1});
+P({c:"izm",n:"Tinnan Badem Ezmecisi",cat:"yemek",s:"t",d:0.5,k:1,se:"iysk",w:"scaf",ar:"Konak",nh:1,note:"Badem ezmesi ve acıbadem kurabiyesi. Hediyelik için.",eat:"Badem ezmesi, acıbadem kurabiyesi, Kavala kurabiyesi",ll:[38.4160,27.1330],ap:1});
+P({c:"izm",n:"Ege’nin Lale Katmercisi",cat:"yemek",s:"bt",d:1,k:1,se:"iysk",w:"scaf",ar:"Urla",nh:1,note:"Kıymalı ve peynirli katmer. Urla çarşısında.",eat:"Kıymalı katmer, peynirli katmer",ll:[38.3228,26.7650],ap:1});
+P({c:"izm",n:"Konal Taş Fırını",cat:"yemek",s:"bt",d:0.5,k:1,se:"iysk",w:"scaf",ar:"Urla",nh:1,note:"Taş fırın ekmeği, çörek ve gevrek.",eat:"Ekmek, çörek, gevrek, kalburabastı",ll:[38.3240,26.7600],ap:1});
+P({c:"izm",n:"Nazmi Usta Dondurma",cat:"yemek",s:"t",d:0.5,k:1,se:"yis",w:"scaf",ar:"Foça",nh:0,note:"Foça’da mevsim meyveli ve sakızlı dondurma.",eat:"Dondurma, sorbe",ll:[38.6690,26.7570],ap:1});
+// Gezilecek yerler
+P({c:"izm",n:"Kemeraltı Çarşısı",cat:"tarih",s:"ma",d:2.5,k:1,se:"iysk",w:"scaf",ar:"Kemeraltı",nh:0,note:"Yüzlerce yıllık çarşı. Hisar Camii ve Kızlarağası Hanı’nda kahve molası.",ll:[38.4190,27.1340],ap:1});
+P({c:"izm",n:"Agora Açık Hava Müzesi",cat:"tarih",s:"a",d:1.5,k:1,se:"iysk",w:"scaf",ar:"Kemeraltı",nh:1,note:"Antik Smyrna’nın pazar yeri. Çoğu zaman sakin.",ll:[38.4166,27.1397],ap:1});
+P({c:"izm",n:"İzmir Arkeoloji Müzesi",cat:"tarih",s:"ma",d:2,k:1,se:"iysk",w:"scaf",ar:"Konak",nh:0,note:"Ege’nin antik kentlerinden buluntular. Efes ve Bergama öncesi hazırlık için iyi.",ll:[38.4150,27.1320],ap:1});
+P({c:"izm",n:"Tarihi Asansör",cat:"sanat,tarih",s:"ae",d:1,k:0,se:"iysk",w:"scaf",ar:"Karataş",nh:1,note:"Asansör 1907’de yapıldı. Üst terastan körfez manzarası.",ll:[38.4090,27.1160],ap:1});
+P({c:"izm",n:"Kordon’da Yürüyüş ve Gün Batımı",cat:"huzur,doga",s:"e",d:1.5,k:0,se:"iysk",w:"scaf",ar:"Alsancak",nh:0,note:"Kordon boyunca düz ve kolay bir rota. Gün batımında körfez kızarır.",ll:[38.4350,27.1400],ap:1});
+P({c:"izm",n:"Karşıyaka Vapuru ve Sahili",cat:"huzur",s:"ae",d:1.5,k:1,se:"iysk",w:"scaf",ar:"Karşıyaka",nh:0,note:"Martı ve simit eşliğinde körfezi geçmek. Karşıyaka sahilinde yürüyüş.",ll:[38.4600,27.1150],ap:1});
+P({c:"izm",n:"Gediz Deltası Flamingo Gözlemi",cat:"doga",s:"m",d:3,k:0,se:"isk",w:"scaf",ar:"Gediz Deltası",nh:1,note:"Dürbün alın. Flamingolar özellikle sonbahar ve kışta görülür.",ll:[38.5500,26.9500],ap:1});
+P({c:"izm",n:"Urla Bağ Yolu ve Zeytinyağı Tadımı",cat:"yemek,doga",s:"a",d:3,k:2,se:"iys",w:"scaf",ar:"Urla",nh:1,note:"Butik şarap ve zeytinyağı üreticileri. Rotayı önceden planlayın.",ll:[38.3228,26.7650],ap:1});
+P({c:"izm",n:"Zeytin Hasadı: Urla ve Seferihisar",cat:"doga,yemek",s:"m",d:3,k:1,se:"s",w:"scaf",ar:"Urla",nh:1,note:"Ekim–Kasım’da zeytin toplama ve yeni sıkım yağ. Üreticilerle önceden iletişime geçin.",ll:[38.3228,26.7650],ap:1,mon:[10,11]});
+P({c:"izm",n:"Sığacık Kalesi ve Teos",cat:"tarih,doga",s:"ma",d:3,k:1,se:"iysk",w:"scaf",ar:"Seferihisar",nh:1,note:"Küçük bir Ege liman kasabası. Teos’ta Dionysos Tapınağı kalıntıları.",ll:[38.1772,26.7850]});
+P({c:"izm",n:"Çeşme Kalesi",cat:"tarih",s:"a",d:1.5,k:1,se:"iysk",w:"scaf",ar:"Çeşme",nh:0,note:"Kalenin içinde müze var. Meydandan marinaya yürüyün.",ll:[38.3236,26.3036]});
+P({c:"izm",n:"Alaçatı Sokakları",cat:"yemek,sanat",s:"a",d:2,k:2,se:"iysk",w:"scaf",ar:"Alaçatı",nh:0,note:"Taş evler arasında butikler ve ot yemekleri.",ll:[38.2814,26.3742]});
+P({c:"izm",n:"Foça Sahili ve Tekne Turu",cat:"doga,huzur",s:"ma",d:4,k:2,se:"iys",w:"scaf",ar:"Foça",nh:1,note:"Taş evler ve koylar. Akdeniz foklarının yaşadığı bölge, görmek nadir.",ll:[38.667,26.767]});
+P({c:"izm",n:"Efes Antik Kenti",cat:"tarih",s:"m",d:3.5,k:2,se:"iysk",w:"scaf",ar:"Selçuk–Efes",nh:0,note:"Celsus Kütüphanesi ve Büyük Tiyatro. Yazın sabah erken gidin.",ll:[37.9411,27.3419]});
+P({c:"izm",n:"Aziz Yuhanna Bazilikası ve Ayasuluk Tepesi",cat:"tarih",s:"a",d:1.5,k:1,se:"iysk",w:"scaf",ar:"Selçuk–Efes",nh:1,note:"Efes’ten sonra çok daha sakin. Tepeden ova manzarası.",ll:[37.9497,27.3669],ap:1});
+P({c:"izm",n:"Şirince Köyü",cat:"tarih,yemek",s:"ae",d:2.5,k:1,se:"iysk",w:"scaf",ar:"Selçuk–Efes",nh:0,note:"Taş evler ve meyve şarapları. Akşamüstü ışığı güzel.",ll:[37.9414,27.4331]});
+P({c:"izm",n:"Bergama Akropolü",cat:"tarih",s:"m",d:3.5,k:2,se:"iysk",w:"scaf",ar:"Bergama",nh:0,note:"Dik yamaçta antik tiyatro. Teleferik seçeneği var.",ll:[39.1325,27.1842]});
+
+// ANTALYA. Mekan adları yemek.com listelerinden. ap:1 = konum semt düzeyinde yaklaşık.
+// Yemek
+P({c:"ant",n:"Börekçi Tevfik",cat:"yemek",s:"bt",d:1,k:1,se:"iysk",w:"scaf",ar:"Kaleiçi çevresi",nh:0,note:"Serpme böreği, kıymalı-maydanozlu ve lor peynirli börek. Sabah kahvaltısı için.",eat:"Serpme böreği, kıymalı maydanozlu börek, lor peynirli börek",ll:[36.8880,30.7020],ap:1});
+P({c:"ant",n:"Meşhur 18’in Bağaçaları",cat:"yemek",s:"bt",d:0.5,k:1,se:"iysk",w:"scaf",ar:"Elmalı",nh:1,note:"Bağaça, Antalya’ya özgü yağlı bir hamur işi.",eat:"Bağaça",ll:[36.8920,30.7030],ap:1});
+P({c:"ant",n:"Brezel & More",cat:"yemek",s:"bt",d:1,k:2,se:"iysk",w:"scf",ar:"Fener",nh:0,note:"Alman usulü brezel, kruvasan ve ekşi mayalı ekmekler.",eat:"Brezel, kruvasan, ekşi mayalı hamur işleri, kahve",ll:[36.8800,30.7200],ap:1});
+P({c:"ant",n:"Luna Garden",cat:"yemek",s:"b",d:1.5,k:2,se:"iysk",w:"scf",ar:"Barbaros",nh:0,note:"Yumurta, tost ve serpme kahvaltı.",eat:"Serpme kahvaltı, yumurta, tost",ll:[36.8850,30.6950],ap:1});
+P({c:"ant",n:"Pablito Bistro",cat:"yemek",s:"b",d:1.5,k:2,se:"iysk",w:"scf",ar:"Lara",nh:0,note:"Lara Caddesi’nde serpme kahvaltı ve hafif tabaklar.",eat:"Serpme kahvaltı, omlet, granola",ll:[36.8780,30.7550],ap:1});
+P({c:"ant",n:"Airi Coffee Bistro",cat:"yemek",s:"b",d:1.5,k:2,se:"iysk",w:"scf",ar:"Lara",nh:0,note:"Akdeniz tabağı ve protein kahvaltısı.",eat:"Serpme kahvaltı, Akdeniz tabağı, omlet, kruvasan",ll:[36.8780,30.7570],ap:1});
+P({c:"ant",n:"La Bohem Beach",cat:"yemek,huzur",s:"b",d:2,k:2,se:"iys",w:"scf",ar:"Konyaaltı",nh:0,note:"Konyaaltı plajında kahvaltı. Kahvaltı sonrası deniz için uygun.",eat:"Serpme kahvaltı, omlet, granola, kruvasan",ll:[36.8550,30.6300],ap:1});
+P({c:"ant",n:"AL-YA Gözleme ve Köy Kahvaltısı",cat:"yemek",s:"b",d:1.5,k:1,se:"iysk",w:"scaf",ar:"Konyaaltı",nh:1,note:"Gözleme ve bazlama, sosyete pazarı mesire alanında.",eat:"Gözleme, bazlama, börek, serpme kahvaltı",ll:[36.8900,30.6300],ap:1});
+P({c:"ant",n:"Bahçelara Kahvaltı Çiftliği",cat:"yemek",s:"b",d:2,k:2,se:"iys",w:"scaf",ar:"Fener",nh:1,note:"Ev yapımı reçeller ve doğal ürünler.",eat:"Serpme kahvaltı, ev yapımı reçeller",ll:[36.8800,30.7250],ap:1});
+P({c:"ant",n:"Balamir Cafe & Restaurant",cat:"yemek",s:"b",d:1.5,k:2,se:"iysk",w:"scaf",ar:"Beldibi",nh:1,note:"Kemer yolu üzerinde geleneksel kahvaltı tabağı.",eat:"Geleneksel kahvaltı tabağı, taze sıkılmış meyve suyu",ll:[36.7090,30.5660],ap:1});
+P({c:"ant",n:"Piyazcı Ahmet",cat:"yemek",s:"ld",d:1,k:1,se:"iysk",w:"scaf",ar:"Altındağ",nh:0,note:"Antalya piyazı tahin sosla yenir. Şiş köfte ve kabak tatlısı da var.",eat:"Antalya piyazı, şiş köfte, ızgara köfte, kabak tatlısı",ll:[36.9050,30.7000],ap:1});
+P({c:"ant",n:"Topçu Kebap",cat:"yemek",s:"ld",d:1,k:1,se:"iysk",w:"scaf",ar:"Elmalı",nh:0,note:"Şiş köfte, piyaz ve döner.",eat:"Şiş köfte, piyaz, döner",ll:[36.8920,30.7050],ap:1});
+P({c:"ant",n:"Şişçi İbo",cat:"yemek",s:"ld",d:1,k:1,se:"iysk",w:"scaf",ar:"Arapsuyu",nh:0,note:"Şiş köfte, Antalya piyazı, manda yoğurdu ve kadayıf tatlısı.",eat:"Şiş köfte, Antalya piyazı, manda yoğurdu, fırın sütlaç, kadayıf",ll:[36.8800,30.6500],ap:1});
+P({c:"ant",n:"Volkan Şişçi Kadir’in Yeri",cat:"yemek",s:"ld",d:1,k:1,se:"iysk",w:"scaf",ar:"Kepez",nh:1,note:"Tahinli piyaz, şiş köfte ve kuzu şiş. Kabak tatlısıyla biter.",eat:"Tahinli Antalya piyazı, şiş köfte, kuzu şiş, cacık, kabak tatlısı",ll:[36.9300,30.7100],ap:1});
+P({c:"ant",n:"7 Mehmet",cat:"yemek",s:"d",d:2,k:3,se:"iysk",w:"scaf",ar:"Meltem",nh:0,note:"Antalya’nın köklü restoranlarından biri. Rezervasyon yapın.",eat:"Antalya mutfağı, ızgaralar, deniz ürünleri",ll:[36.8830,30.6700],ap:1});
+P({c:"ant",n:"Can Can Pide Yemek Salonu",cat:"yemek",s:"l",d:1,k:1,se:"iysk",w:"scaf",ar:"Muratpaşa",nh:1,note:"Anne yemekleri ve pideler. Öğle esnafının tercihi.",eat:"Pide, ev yemekleri",ll:[36.8900,30.7000],ap:1});
+P({c:"ant",n:"Sade Patisserie",cat:"yemek",s:"t",d:0.5,k:2,se:"iysk",w:"scf",ar:"Yeşilbahçe",nh:0,note:"Kruvasan, pasta, ekler ve tart. Kahve molası.",eat:"Kruvasan, ekler, profiterol, tart, Paris-Brest",ll:[36.8900,30.7100],ap:1});
+// Gezilecek yerler
+P({c:"ant",n:"Kaleiçi ve Hadrian Kapısı",cat:"tarih",s:"ma",d:2.5,k:0,se:"iysk",w:"scaf",ar:"Kaleiçi",nh:0,note:"Dar sokaklar ve Yivli Minare. Sabahları sakin.",ll:[36.8884,30.7077],ap:1});
+P({c:"ant",n:"Hıdırlık Kulesi ve Kaleiçi Yat Limanı",cat:"huzur",s:"ae",d:1.5,k:0,se:"iysk",w:"scaf",ar:"Kaleiçi",nh:0,note:"Gün batımında limanı ve Toroslar’ı izleyin.",ll:[36.8850,30.7020],ap:1});
+P({c:"ant",n:"Antalya Müzesi",cat:"tarih",s:"a",d:2.5,k:2,se:"iysk",w:"scaf",ar:"Konyaaltı",nh:0,note:"Perge heykelleri ve Likya buluntuları. Yağmurlu günler için iyi.",ll:[36.8860,30.6790],ap:1});
+P({c:"ant",n:"Konyaaltı Sahili",cat:"huzur",s:"a",d:2.5,k:0,se:"iys",w:"scaf",ar:"Konyaaltı",nh:0,note:"Çakıl plaj ve Toroslar manzarası. Yazın kalabalık.",ll:[36.8600,30.6500],ap:1});
+P({c:"ant",n:"Antalya Akvaryum",cat:"doga",s:"a",d:2.5,k:2,se:"iysk",w:"caf",ar:"Konyaaltı",nh:0,note:"Tünel akvaryum. Çocuklar ve yağmurlu günler için.",ll:[36.8570,30.6370],ap:1});
+P({c:"ant",n:"Üst Düden Şelalesi",cat:"doga",s:"ma",d:1.5,k:1,se:"iysk",w:"scaf",ar:"Düden",nh:0,note:"Park içinde şelale, çay bahçeleri çevrede.",ll:[36.9638,30.7267]});
+P({c:"ant",n:"Alt Düden Şelalesi",cat:"doga",s:"ae",d:1,k:1,se:"iysk",w:"scaf",ar:"Lara",nh:0,note:"Denize dökülen şelale. Manzara noktası gün batımında güzel.",ll:[36.8510,30.7834]});
+P({c:"ant",n:"Kurşunlu Şelalesi Tabiat Parkı",cat:"doga",s:"m",d:2,k:1,se:"iys",w:"scaf",ar:"Kurşunlu",nh:1,note:"Orman içinde gölet ve şelale. Hafta sonları kalabalık.",ll:[37.0030,30.8210]});
+P({c:"ant",n:"Perge Antik Kenti",cat:"tarih",s:"m",d:2,k:2,se:"iysk",w:"scaf",ar:"Perge–Aspendos",nh:0,note:"Stadyum ve sütunlu cadde. Antalya Müzesi’ndeki heykellerle birlikte düşünün.",ll:[36.9614,30.8539]});
+P({c:"ant",n:"Aspendos Antik Tiyatrosu",cat:"tarih",s:"a",d:1.5,k:2,se:"iysk",w:"scaf",ar:"Perge–Aspendos",nh:0,note:"En iyi korunmuş Roma tiyatrolarından biri. Akustiği etkileyici.",ll:[36.9389,31.1722]});
+P({c:"ant",n:"Side Antik Kenti",cat:"tarih,huzur",s:"mae",d:2.5,k:2,se:"iysk",w:"scaf",ar:"Side",nh:0,note:"Gün batımında deniz kıyısındaki Apollon Tapınağı siluetini izleyin.",ll:[36.7667,31.3889]});
+P({c:"ant",n:"Manavgat Şelalesi",cat:"doga",s:"a",d:1.5,k:1,se:"iysk",w:"scaf",ar:"Side",nh:0,note:"Kısa ve rahat bir durak. Nehirde tekne gezisi seçeneği var.",ll:[36.7860,31.4450],ap:1});
+P({c:"ant",n:"Olympos Antik Kenti",cat:"tarih,doga",s:"ma",d:2.5,k:1,se:"iys",w:"scaf",ar:"Olympos–Çıralı",nh:1,note:"Ormanın içindeki kalıntılar sahile iner.",ll:[36.3969,30.4744],ap:1});
+P({c:"ant",n:"Yanartaş (Çıralı)",cat:"macera,doga",s:"e",d:2.5,k:1,se:"iysk",w:"scaf",ar:"Olympos–Çıralı",nh:1,note:"Kayalardan sürekli yanan doğal alevler. Gece yürüyüşü için fener ve sağlam ayakkabı.",ll:[36.4150,30.4745],ap:1});
+P({c:"ant",n:"Phaselis Antik Kenti",cat:"tarih,doga",s:"ma",d:2.5,k:1,se:"iysk",w:"scaf",ar:"Kemer–Phaselis",nh:1,note:"Üç limanlı antik kent çam ormanı içinde. Koylarında yüzülebilir.",ll:[36.5236,30.5522]});
+P({c:"ant",n:"Termessos",cat:"tarih,doga,macera",s:"m",d:3.5,k:2,se:"isk",w:"scaf",ar:"Termessos",nh:1,note:"Güllük Dağı yamacında fethedilemeyen kent. Yol dik, yazın çok sıcak.",ll:[36.9825,30.4647]});
+P({c:"ant",n:"Kekova ve Batık Şehir Tekne Turu",cat:"doga,tarih",s:"m",d:5,k:2,se:"iys",w:"scaf",ar:"Kekova–Kaş",nh:0,note:"Simena Kalesi ve su altında kalan Likya yerleşimi. Sakin havada daha güzel.",ll:[36.1806,29.8778]});
+P({c:"ant",n:"Patara Plajı ve Antik Kenti",cat:"doga,tarih",s:"a",d:3,k:1,se:"iys",w:"scaf",ar:"Patara",nh:1,note:"Yaklaşık 18 km kumsal ve Likya Birliği meclis binası kalıntıları.",ll:[36.2639,29.3139],ap:1});
+P({c:"ant",n:"Köprülü Kanyon Rafting",cat:"macera",s:"m",d:4,k:2,se:"iys",w:"scf",ar:"Köprülü Kanyon",nh:0,note:"Köprüçay’da ilkbahar ve yaz aylarında. Seviye su düzeyine bağlıdır.",ll:[37.1922,31.1808]});
+P({c:"ant",n:"Portakal Hasadı ve Taze Sıkma",cat:"doga,yemek",s:"m",d:2,k:1,se:"k",w:"scaf",ar:"Konyaaltı",nh:1,note:"Kış aylarında portakal hasadı. Bahçe ve pazar ziyareti.",ll:[36.9000,30.6500],ap:1,mon:[11,12,1,2,3]});
+
+// TRABZON. Mekan adları yemek.com listelerinden. ap:1 = konum semt düzeyinde yaklaşık.
+// Kahvaltı
+P({c:"trb",n:"Sofia Garden Cafe & Brasserie",cat:"yemek",s:"b",d:1.5,k:2,se:"iysk",w:"scaf",ar:"Merkez",nh:0,note:"Kuymak, kaygana, mini pide ve gözleme. Karadeniz kahvaltısı için merkezde.",eat:"Kuymak, kaygana, mini pide, sigara böreği, gözleme, bal, kaymak",ll:[41.0040,39.7180],ap:1});
+P({c:"trb",n:"Asimer Kafe ve Kahvaltı Salonu",cat:"yemek",s:"b",d:1.5,k:1,se:"iysk",w:"scaf",ar:"Bostancı",nh:0,note:"Kuymak, kaygana ve minzi kavurması gibi Karadeniz yemekleri.",eat:"Kuymak, kaygana, minzi kavurması, bezelye kavurması",ll:[40.9990,39.7330],ap:1});
+P({c:"trb",n:"Terrace",cat:"yemek,huzur",s:"b",d:1.5,k:2,se:"iysk",w:"scaf",ar:"Soğuksu",nh:1,note:"Soğuksu’da peynir, zeytin, kuymak ve yumurtalı ekmek.",eat:"Kuymak, kaygana, sigara böreği, yumurtalı ekmek, bal, kaymak",ll:[40.9990,39.7080],ap:1});
+P({c:"trb",n:"Fındık Altı",cat:"yemek,huzur",s:"b",d:2,k:2,se:"iys",w:"scaf",ar:"Yalıncak",nh:1,note:"Yalıncak’ta bahçede kaygana, menemen ve semaverde Karadeniz çayı.",eat:"Kaygana, menemen, sigara böreği, sahanda yumurta, çay",ll:[40.9960,39.7000],ap:1});
+P({c:"trb",n:"Marzuba Cafe Restoran",cat:"yemek,huzur",s:"bl",d:1.5,k:2,se:"iys",w:"scaf",ar:"Maçka",nh:1,note:"Sümela yolunda serpme kahvaltı, kuymak ve kaygana.",eat:"Serpme kahvaltı, kuymak, kaygana",ll:[40.8300,39.6200],ap:1});
+P({c:"trb",n:"Rüştü’nün Fırını",cat:"yemek",s:"bl",d:1,k:1,se:"iysk",w:"scaf",ar:"Pazarkapı",nh:0,note:"Kıymalı pide, peynirli pide ve Vakfıkebir ekmeği.",eat:"Kıymalı pide, peynirli pide, Vakfıkebir ekmeği",ll:[41.0030,39.7280],ap:1});
+// Öğle ve akşam
+P({c:"trb",n:"Pekünlü Merkez Pide",cat:"yemek",s:"l",d:1,k:1,se:"iysk",w:"scaf",ar:"Kemerkaya",nh:0,note:"Açık kıymalı pide ve klasik peynirli pide.",eat:"Açık kıymalı pide, peynirli pide",ll:[41.0030,39.7230],ap:1});
+P({c:"trb",n:"Tarihi Kalkanoğlu Pilavı",cat:"yemek",s:"l",d:1,k:1,se:"iysk",w:"scaf",ar:"Pazarkapı",nh:0,note:"Karışık pilav, az kuru ve kavurma. Kayısı hoşafıyla.",eat:"Karışık pilav, kuru fasulye, kavurma, kayısı hoşafı",ll:[41.0030,39.7280],ap:1});
+P({c:"trb",n:"Muharrem Usta",cat:"yemek",s:"l",d:1,k:1,se:"iysk",w:"scaf",ar:"Kemerkaya",nh:0,note:"Et döner, Trabzon’da bilinen bir sokak lezzeti.",eat:"Et döner",ll:[41.0000,39.7200],ap:1});
+P({c:"trb",n:"Komaroğlu Köfte Salonu",cat:"yemek",s:"ld",d:1,k:1,se:"iysk",w:"scaf",ar:"Akçaabat",nh:0,note:"Akçaabat köftesinin bilinen mekanlarından biri. Dürbinar’da.",eat:"Akçaabat köftesi",ll:[41.0170,39.5500],ap:1});
+P({c:"trb",n:"Yılmaz Pide",cat:"yemek",s:"l",d:1,k:1,se:"iysk",w:"scaf",ar:"Sürmene",nh:1,note:"Peynirli kavurmalı pide. Sahil yolundaki Sürmene’de.",eat:"Peynirli kavurmalı pide",ll:[40.9142,40.1125],ap:1});
+P({c:"trb",n:"Bordo Mavi Balık",cat:"yemek",s:"d",d:2,k:3,se:"iysk",w:"sc",ar:"Boztepe",nh:0,note:"Boztepe’de balık restoranı. Levrek buğulama, mezgit ve karalahana sarması.",eat:"Levrek buğulama, Karadeniz mezgidi, karides güveç, karalahana sarması, minci peyniri",ll:[41.0000,39.7320],ap:1});
+P({c:"trb",n:"Beton Helva",cat:"yemek",s:"t",d:0.5,k:1,se:"iysk",w:"scaf",ar:"Gazipaşa",nh:1,note:"Sade ve fıstıklı helva. Hediyelik için.",eat:"Sade helva, fıstıklı helva",ll:[41.0040,39.7230],ap:1});
+P({c:"trb",n:"Zemu Swiss Bakery",cat:"yemek",s:"t",d:1,k:2,se:"iysk",w:"scf",ar:"Erdoğdu",nh:0,note:"Pasta ve kahve molası.",eat:"Cappuccino, pasta, rulo",ll:[41.0000,39.7000],ap:1});
+// Gezilecek yerler
+P({c:"trb",n:"Sümela Manastırı",cat:"tarih,doga",s:"m",d:3,k:2,se:"iysk",w:"scaf",ar:"Sümela–Maçka",nh:0,note:"Dik patikada yürüyüş. Sis ve yağmur sık. Ziyaret koşullarını önceden kontrol edin.",ll:[40.69,39.6583]});
+P({c:"trb",n:"Uzungöl",cat:"doga",s:"ma",d:3,k:1,se:"iysk",w:"scaf",ar:"Uzungöl–Çaykara",nh:0,note:"Göl çevresinde yürüyüş. Yazın hafta sonları çok kalabalık, sabah gidin.",ll:[40.6192,40.295]});
+P({c:"trb",n:"Trabzon Ayasofyası",cat:"tarih,huzur",s:"a",d:1.5,k:0,se:"iysk",w:"scaf",ar:"Merkez",nh:0,note:"Karadeniz’deki Bizans mirası. Cami olarak ibadete açık olduğundan saatlere dikkat edin.",ll:[40.9997,39.6958],ap:1});
+P({c:"trb",n:"Atatürk Köşkü",cat:"tarih",s:"m",d:1,k:1,se:"iysk",w:"scaf",ar:"Soğuksu",nh:0,note:"Atatürk’ün Trabzon’daki konutu. Bahçeden şehir manzarası.",ll:[40.9990,39.7100],ap:1});
+P({c:"trb",n:"Trabzon Müzesi (Kostaki Köşkü)",cat:"sanat,tarih",s:"a",d:1.5,k:1,se:"iysk",w:"scaf",ar:"Merkez",nh:1,note:"Rum Kostaki ailesinin konağı. Trabzon’un kültür geçmişini anlatır.",ll:[41.0045,39.7170],ap:1});
+P({c:"trb",n:"Uzun Sokak ve Taş Han",cat:"tarih",s:"a",d:1.5,k:0,se:"iysk",w:"scaf",ar:"Merkez",nh:0,note:"Eski çarşı hayatı. Taş Han’da el sanatları.",ll:[41.0040,39.7210],ap:1});
+P({c:"trb",n:"Gülbahar Hatun Külliyesi",cat:"huzur,tarih",s:"a",d:1,k:0,se:"iysk",w:"scaf",ar:"Boztepe",nh:1,note:"Yavuz Sultan Selim’in annesi adına yapılmış. Boztepe yolu üzerinde.",ll:[41.0030,39.7260],ap:1});
+P({c:"trb",n:"Boztepe Çay Bahçeleri",cat:"huzur,doga",s:"ae",d:1.5,k:1,se:"iysk",w:"scaf",ar:"Boztepe",nh:0,note:"Şehir ve deniz manzarası. Akşamüstü çay için.",ll:[41.0020,39.7300],ap:1});
+P({c:"trb",n:"Meydan Parkı ve Sahil Yürüyüşü",cat:"huzur",s:"ae",d:1.5,k:0,se:"iys",w:"scaf",ar:"Merkez",nh:0,note:"Kentin buluşma noktası. Akşamüstü yürüyüş için.",ll:[41.0050,39.7220],ap:1});
+P({c:"trb",n:"Akçaabat Sahili",cat:"huzur,doga",s:"a",d:1.5,k:0,se:"iys",w:"scaf",ar:"Akçaabat",nh:1,note:"Köfte molasından sonra sahilde yürüyüş.",ll:[41.017,39.55],ap:1});
+P({c:"trb",n:"Sürmene Bıçak Atölyeleri",cat:"sanat",s:"a",d:1.5,k:1,se:"iysk",w:"scaf",ar:"Sürmene",nh:1,note:"Geleneksel bıçak ustaları. Atölyede üretimi izleyin.",ll:[40.9142,40.1125],ap:1});
+P({c:"trb",n:"Maçka ve Altındere Vadisi",cat:"doga",s:"ma",d:2,k:1,se:"iysk",w:"scaf",ar:"Sümela–Maçka",nh:1,note:"Sümela yolunda vadi ve alabalık tesisleri.",ll:[40.8119,39.6131]});
+
+// MERSİN. Mekan adları ve semtleri yemek.com mekan listesinden. ap:1 = konum semt düzeyinde yaklaşık.
+// Yemek ve içecek
+P({c:"mer",n:"Ciğerci Saboş Ergün Uyanık",cat:"yemek",s:"bl",d:1,k:1,se:"iysk",w:"scaf",ar:"Kiremithane",nh:0,note:"Açık ekmek üstünde ciğer ve yanında ayran. Sabah ve öğle saatlerinde dolar.",eat:"Açık ekmek ciğer, ayran",ll:[36.7955,34.6255],ap:1});
+P({c:"mer",n:"Tarsuslu Murat Usta",cat:"yemek",s:"bl",d:1,k:1,se:"iysk",w:"scaf",ar:"Kiremithane",nh:1,note:"Tarmer çorbasıyla bilinir. Güne sıcak bir çorbayla başlamak isteyenler için.",eat:"Tarmer çorbası",ll:[36.7950,34.6262],ap:1});
+P({c:"mer",n:"Yürü Börek & Künefe",cat:"yemek",s:"bt",d:1,k:1,se:"iysk",w:"scaf",ar:"Yenişehir",nh:0,note:"Şireli börek ve künefe. Silifke Caddesi üzerinde.",eat:"Şireli börek, künefe",ll:[36.7900,34.5920],ap:1});
+P({c:"mer",n:"Borsa Tantuni",cat:"yemek",s:"ld",d:1,k:1,se:"iysk",w:"scaf",ar:"Yenişehir",nh:0,note:"Mersin’in sokak lezzeti tantuni burada açık ekmek üstünde servis edilir.",eat:"Tantuni, şalgam",ll:[36.7890,34.5900],ap:1});
+P({c:"mer",n:"Pirzolacı Fırat Usta",cat:"yemek",s:"ld",d:1.5,k:2,se:"iysk",w:"scaf",ar:"Toroslar",nh:0,note:"Pirzola ve kaburga şiş. Karaisalı Caddesi üzerinde, kent merkezinin kuzeyinde.",eat:"Pirzola, kaburga şiş",ll:[36.8350,34.6050],ap:1});
+P({c:"mer",n:"Akın Humus Tarsus",cat:"yemek",s:"bl",d:1,k:1,se:"iysk",w:"scaf",ar:"Tarsus",nh:1,note:"Tarsus’ta humus sabahları ve öğleyin tüketilir. Esnaf kalabalığı yoğun.",eat:"Humus",ll:[36.9172,34.8935],ap:1});
+P({c:"mer",n:"Azim Baba Restaurant",cat:"yemek",s:"ld",d:1.5,k:2,se:"iysk",w:"scaf",ar:"Tarsus",nh:0,note:"Kuşgözü lahmacun ve yöresel yemekler. Adana Bulvarı üzerinde, Tarsus girişinde.",eat:"Kuşgözü lahmacun, kebap",ll:[36.9120,34.8760],ap:1});
+P({c:"mer",n:"Kiremithane",cat:"yemek",s:"ld",d:2,k:2,se:"iysk",w:"scaf",ar:"Kiremithane",nh:0,note:"Mersin mutfağından mezeler ve ana yemekler. İsli yarma, ful borani ve levrekli içli köfte öne çıkar.",eat:"İsli yarma, ful borani, mütebbel, levrekli içli köfte, kıymalı baklava böreği, batata harra",ll:[36.7940,34.6215],ap:1});
+P({c:"mer",n:"Sahil Balık Restoran",cat:"yemek",s:"ld",d:2,k:3,se:"iysk",w:"sc",ar:"Mezitli",nh:0,note:"Mezitli sahilinde balık ve deniz ürünleri. Ahtapot, karides ve ızgara barbun sevilir.",eat:"Mersin patatesi, kaya koruğu, levrek marin, ahtapot, jumbo karides, ızgara barbun",ll:[36.7600,34.5400],ap:1});
+P({c:"mer",n:"Kerebiççi Hayri Usta",cat:"yemek",s:"t",d:0.5,k:1,se:"iysk",w:"scaf",ar:"Kiremithane",nh:0,note:"Mersin’e özgü kerebiç tatlısı. İstiklal Caddesi üzerinde.",eat:"Kerebiç",ll:[36.7960,34.6240],ap:1});
+P({c:"mer",n:"Künefeci İsmail Usta",cat:"yemek",s:"t",d:0.5,k:1,se:"iysk",w:"scaf",ar:"Çankaya",nh:0,note:"Sıcak künefe. Silifke Caddesi üzerinde.",eat:"Künefe",ll:[36.7970,34.6150],ap:1});
+P({c:"mer",n:"Atomcu Hamit",cat:"yemek",s:"t",d:0.5,k:1,se:"iysk",w:"scaf",ar:"Yenişehir",nh:1,note:"Mersin’e özgü meyve, fıstık ve dondurmayla yapılan atom içeceği. Özellikle sıcak günlerde.",eat:"Atom",ll:[36.7910,34.5960],ap:1});
+P({c:"mer",n:"Dondurmacı Halil",cat:"yemek",s:"t",d:0.5,k:1,se:"yis",w:"scaf",ar:"Yenişehir",nh:0,note:"Limonlu ve karışık meyveli dondurma. Cezerye ve ekler de satılır.",eat:"Limonlu dondurma, karışık meyveli dondurma, cezerye, ekler",ll:[36.7880,34.5880],ap:1});
+P({c:"mer",n:"Mark & Cleo",cat:"yemek",s:"t",d:1,k:2,se:"iysk",w:"scf",ar:"Yenişehir",nh:0,note:"Pasta ve kahve molası için modern bir kafe.",eat:"Paris brest, tiramisu, kahve",ll:[36.7850,34.5800],ap:1});
+P({c:"mer",n:"Ayrancı Orhan",cat:"yemek",s:"t",d:0.5,k:1,se:"yis",w:"scaf",ar:"Tarsus",nh:1,note:"Tarsus’ta ayran ve simit molası. Sıcak günlerde kısa bir durak.",eat:"Ayran, simit",ll:[36.9168,34.8930],ap:1});
+P({c:"mer",n:"Havana Pasta Gofret",cat:"yemek",s:"t",d:0.5,k:1,se:"iysk",w:"scaf",ar:"Tarsus",nh:1,note:"Tarsus çöreği için bilinir. Hediyelik almak da mümkün.",eat:"Tarsus çöreği, pasta",ll:[36.9160,34.8900],ap:1});
+// Merkez
+P({c:"mer",n:"Mersin Sahil Yürüyüşü ve Atatürk Parkı",cat:"huzur,doga",s:"mae",d:1.5,k:0,se:"iysk",w:"scaf",ar:"Mersin Merkez",nh:0,note:"Sahil boyunca uzanan park ve yürüyüş yolu. Akşamüstü bisiklet ve yürüyüş için kalabalıklaşır.",ll:[36.7975,34.6310],ap:1});
+P({c:"mer",n:"Mersin Müzesi",cat:"tarih,sanat",s:"ma",d:1.5,k:1,se:"iysk",w:"scaf",ar:"Mersin Merkez",nh:0,note:"Mersin ve çevresindeki antik kentlerden buluntular. Yağmurlu günler için uygun.",ll:[36.8000,34.6350],ap:1});
+P({c:"mer",n:"Atatürk Evi (Mersin)",cat:"tarih",s:"ma",d:1,k:0,se:"iysk",w:"scaf",ar:"Mersin Merkez",nh:1,note:"Atatürk’ün Mersin’de kaldığı ev müze olarak ziyarete açık. Kalabalık olmaz.",ll:[36.7990,34.6300],ap:1});
+P({c:"mer",n:"Mersin Marina",cat:"huzur",s:"ae",d:1,k:0,se:"iysk",w:"scaf",ar:"Yenişehir",nh:0,note:"Limandaki yatları izlemek ve marinada yürümek için. Akşamüstü sakin.",ll:[36.7890,34.5900],ap:1});
+// Tarsus
+P({c:"mer",n:"Aziz Pavlus Kuyusu ve Anıt Müzesi",cat:"tarih",s:"ma",d:1,k:1,se:"iysk",w:"scaf",ar:"Tarsus",nh:0,note:"Aziz Pavlus’un doğduğu kentte kuyu ve anıt müze. Hristiyan hacıların ziyaret ettiği bir yer.",ll:[36.9165,34.8951],ap:1});
+P({c:"mer",n:"Kleopatra Kapısı",cat:"tarih",s:"m",d:0.5,k:0,se:"iysk",w:"scaf",ar:"Tarsus",nh:0,note:"Antik Tarsus’tan kalan kapı. Kısa bir durak olarak Tarsus gezisine eklenir.",ll:[36.9165,34.8800],ap:1});
+P({c:"mer",n:"Tarsus Çarşısı",cat:"tarih",s:"ma",d:1.5,k:0,se:"iysk",w:"scaf",ar:"Tarsus",nh:0,note:"Esnaf, yöresel ürünler ve çay molaları. Ulu Camii çevresi.",ll:[36.9172,34.8940],ap:1});
+// Kıyı ve antik kentler
+P({c:"mer",n:"Kızkalesi",cat:"tarih,doga",s:"ma",d:2,k:1,se:"iysk",w:"scaf",ar:"Kızkalesi",nh:0,note:"Sahile yakın ada kalesi ve karadaki kale yan yana. Yaz aylarında yüzülerek ya da tekneyle geçilir.",ll:[36.4667,34.1500]});
+P({c:"mer",n:"Kızkalesi Plajı",cat:"huzur,doga",s:"a",d:3,k:0,se:"y",w:"scaf",ar:"Kızkalesi",nh:0,note:"Uzun ve geniş kumsal. Temmuz ve Ağustos’ta kalabalık.",ll:[36.4650,34.1560]});
+P({c:"mer",n:"Ayaş (Elaiussa Sebaste)",cat:"tarih",s:"ma",d:1.5,k:1,se:"iysk",w:"scaf",ar:"Kızkalesi",nh:1,note:"Deniz kıyısında antik kalıntılar. Kızkalesi ziyareti ile aynı gün görülebilir.",ll:[36.4836,34.1737]});
+P({c:"mer",n:"Kanlıdivane Antik Kenti",cat:"tarih,doga",s:"ma",d:1.5,k:1,se:"iysk",w:"scaf",ar:"Kızkalesi",nh:1,note:"Büyük bir çukurun çevresinde antik yapılar. Yaz sıcağında gölge az.",ll:[36.5256,34.1792]});
+P({c:"mer",n:"Narlıkuyu",cat:"doga,tarih",s:"ma",d:2.5,k:1,se:"iysk",w:"scaf",ar:"Narlıkuyu",nh:0,note:"Cennet ve Cehennem çukurları, Üç Güzeller mozaiği ve balıkçı barınağı bir arada. Cennet’e merdivenle inilir.",ll:[36.4500,34.1170]});
+// Silifke ve iç bölge
+P({c:"mer",n:"Silifke Kalesi",cat:"tarih",s:"ma",d:1.5,k:1,se:"iysk",w:"scaf",ar:"Silifke",nh:0,note:"Kentin üstünde yükselen ortaçağ kalesi. Yukarıdan Göksu vadisi görülür.",ll:[36.3764,33.9156]});
+P({c:"mer",n:"Uzuncaburç (Diokaisareia)",cat:"tarih,doga",s:"m",d:2.5,k:1,se:"iysk",w:"scaf",ar:"Silifke",nh:0,note:"Silifke’nin dağlarında antik kent. Zeus Olbios Tapınağı ve kule görülür. Yol dağlıktır, yaz sıcağında sabah gidin.",ll:[36.5830,33.9330]});
+P({c:"mer",n:"Alahan Manastırı",cat:"tarih",s:"m",d:2,k:1,se:"iysk",w:"scaf",ar:"Mut",nh:1,note:"Dağın yamacında erken Hristiyanlık dönemi manastır. Sakin ve uzak bir yer.",ll:[36.7914,33.3536]});
+P({c:"mer",n:"Mamure Kalesi",cat:"tarih,doga",s:"ma",d:1.5,k:1,se:"iysk",w:"scaf",ar:"Anamur",nh:0,note:"Deniz kıyısında iyi korunmuş ortaçağ kalesi. Yoldan deniz manzarası güzel.",ll:[36.0808,32.8944]});
+
+// ADANA. Mekan adları ve semtleri yemek.com listelerinden. ap:1 = konum semt düzeyinde yaklaşık.
+// Kahvaltı ve ciğer
+P({c:"ada",n:"Büyük Saat Ciğercisi İbrahim Usta",cat:"yemek",s:"bl",d:1,k:1,se:"iysk",w:"scaf",ar:"Büyüksaat",nh:0,note:"Adana’da ciğer sabah yenir. Sıcak ekmek, salata ve yeşillikle servis edilir.",eat:"Ciğer, sıcak ekmek, salata",ll:[36.9890,35.3270],ap:1});
+P({c:"ada",n:"Ciğerci Ulaş",cat:"yemek",s:"bl",d:1,k:1,se:"iysk",w:"scaf",ar:"Güzelyalı",nh:0,note:"Turgut Özal Bulvarı üzerinde. Ciğerin yanında mezeler gelir.",eat:"Ciğer, sıcak ekmek, mezeler",ll:[37.0030,35.2870],ap:1});
+P({c:"ada",n:"Ciğerci Kel Mahmut",cat:"yemek",s:"bl",d:1,k:1,se:"iysk",w:"scaf",ar:"Yüreğir",nh:1,note:"Yüreğir tarafında yerel halkın sabah ciğeri için gittiği yer.",eat:"Ciğer",ll:[36.9800,35.3600],ap:1});
+P({c:"ada",n:"Ciğerci Sedat",cat:"yemek",s:"bl",d:1,k:1,se:"iysk",w:"scaf",ar:"Yüreğir",nh:1,note:"Ciğer, sıcak ekmek ve salata.",eat:"Ciğer, sıcak ekmek, salata",ll:[36.9780,35.3650],ap:1});
+P({c:"ada",n:"Şırdancı Bedo",cat:"yemek",s:"bl",d:1,k:1,se:"iysk",w:"sf",ar:"Kocavezir",nh:1,note:"Şırdan, paça ve işkembe. Çorba severlere, sabahtan gidin.",eat:"Şırdan, çürük, paça, işkembe, mercimek çorbası",ll:[36.9960,35.3280],ap:1});
+P({c:"ada",n:"Börekçi Rıza",cat:"yemek",s:"bt",d:1,k:1,se:"iysk",w:"scaf",ar:"Alidede",nh:0,note:"Kıymalı ve kaşarlı börek. Kahvaltı ya da ara öğün için.",eat:"Kıymalı börek, kaşarlı börek, kaşarlı üzeri kıymalı börek",ll:[36.9900,35.3350],ap:1});
+P({c:"ada",n:"Güneşer Bakery",cat:"yemek",s:"b",d:1.5,k:2,se:"iysk",w:"scf",ar:"Güzelyalı",nh:0,note:"Ev yapımı reçel, ekşi mayalı ekmek ve serpme kahvaltı.",eat:"Serpme kahvaltı, ekşi mayalı ekmek, börek, ev yapımı reçel",ll:[37.0040,35.2880],ap:1});
+P({c:"ada",n:"Emirgan Sütiş Park Zirve",cat:"yemek",s:"b",d:1.5,k:2,se:"iysk",w:"scaf",ar:"Çukurova",nh:0,note:"Serpme kahvaltı ve yumurta çeşitleri. Hafta sonu kalabalık olur.",eat:"Serpme kahvaltı, yumurta, börek",ll:[37.0150,35.2750],ap:1});
+P({c:"ada",n:"DSİ Sosyal Tesisleri",cat:"yemek,huzur",s:"b",d:1.5,k:2,se:"iysk",w:"scaf",ar:"Seyhan Barajı",nh:1,note:"Seyhan Baraj Gölü kıyısında açık büfe kahvaltı. Dönem dönem değişebilir, gitmeden kontrol edin.",eat:"Açık büfe kahvaltı",ll:[37.0200,35.3050],ap:1});
+// Kebap
+P({c:"ada",n:"Birbiçer Kebap Salonu",cat:"yemek",s:"ld",d:1.5,k:2,se:"iysk",w:"scaf",ar:"Meydan",nh:0,note:"Kebap ve ciğerle bilinen köklü bir salon. Kuzu kuşbaşı ve çöp şiş de var.",eat:"Adana kebap, ciğer, kuzu kuşbaşı, çöp şiş, ayran",ll:[36.9985,35.3240],ap:1});
+P({c:"ada",n:"Kazancılar Kebapçısı",cat:"yemek",s:"ld",d:1.5,k:2,se:"iysk",w:"scaf",ar:"Sarıyakup",nh:0,note:"Tarihi çarşı çevresinde köklü kebap salonu. Mezeler ve meyveler de servis edilir.",eat:"Adana kebap, mezeler",ll:[36.9895,35.3265],ap:1});
+P({c:"ada",n:"İştah Kebap",cat:"yemek",s:"ld",d:1.5,k:2,se:"iysk",w:"scaf",ar:"Yağ Camii",nh:0,note:"Yağ Camii çevresinde. Adana kebabın yanında ev yapımı şalgam gelir.",eat:"Adana kebap, şalgam",ll:[36.9855,35.3290],ap:1});
+P({c:"ada",n:"Kebapçı Mesut",cat:"yemek",s:"ld",d:1.5,k:2,se:"iysk",w:"scaf",ar:"Kuruköprü",nh:0,note:"Eski usul Adana kebap. Kuruköprü semtinde, Karacaoğlan Caddesi üzerinde.",eat:"Adana kebap",ll:[36.9970,35.3280],ap:1});
+P({c:"ada",n:"Cik Cik Ali",cat:"yemek",s:"ld",d:1.5,k:2,se:"iysk",w:"scaf",ar:"Kuruköprü",nh:0,note:"Satır kıymasından kebap. Yanında mantar salatası ve sumaklı soğan gelir.",eat:"Satır kıyması kebap, mantar salatası, sumaklı soğan",ll:[36.9980,35.3260],ap:1});
+P({c:"ada",n:"Yeşil Kapı",cat:"yemek",s:"ld",d:1.5,k:2,se:"iysk",w:"scaf",ar:"Reşatbey",nh:0,note:"Külbastı ve üçlü karışık. Yayık ayranla servis edilir.",eat:"Kıyma ve tavuk külbastı, üçlü karışık, yayık ayran",ll:[36.9930,35.3190],ap:1});
+P({c:"ada",n:"Kling Usta",cat:"yemek",s:"ld",d:1.5,k:2,se:"iysk",w:"scaf",ar:"Reşatbey",nh:0,note:"Külbastı, ciğer ve kebap. Gazipaşa Bulvarı üzerinde.",eat:"Külbastı, ciğer, kebap",ll:[36.9920,35.3170],ap:1});
+P({c:"ada",n:"Eyvan Kebap",cat:"yemek",s:"ld",d:1.5,k:2,se:"iysk",w:"scaf",ar:"Seyhan",nh:0,note:"Turgut Özal Bulvarı üzerinde kebap ve künefe.",eat:"Adana kebap, künefe",ll:[37.0000,35.2900],ap:1});
+P({c:"ada",n:"Kebapçı Ufuk’un Yeri",cat:"yemek",s:"ld",d:1.5,k:2,se:"iysk",w:"scaf",ar:"Karataş Bulvarı",nh:0,note:"Sulu kebap, sarımsaklı beytili ve çöp şiş. Tahinli salata yanında gelir.",eat:"Sulu kebap, sarımsaklı beytili, çöp şiş, tahinli salata",ll:[36.9800,35.3300],ap:1});
+P({c:"ada",n:"Bol Kepçe",cat:"yemek",s:"ld",d:1.5,k:2,se:"iysk",w:"scaf",ar:"Yüreğir",nh:0,note:"Adana kebap, karışık tabak ve tavuk çeşitleri. Şalgamla.",eat:"Adana kebap, karışık tabak, tavuk kanat, tavuk şiş, şalgam",ll:[36.9700,35.3750],ap:1});
+P({c:"ada",n:"Elem Restaurant",cat:"yemek",s:"d",d:2,k:3,se:"iysk",w:"scaf",ar:"Karataş Yolu",nh:0,note:"Kuyruk altı ve kaz başı kebap gibi alışılmışın dışında kebaplar. Kentin dışında, Karataş yolunda.",eat:"Kuyruk altı kebap, kaz başı kebap, metrelik acılı kebap, sucuklu kaşarlı humus",ll:[36.9500,35.3900],ap:1});
+P({c:"ada",n:"Kaburgacı Yaşar Usta",cat:"yemek",s:"ld",d:1.5,k:2,se:"iysk",w:"scaf",ar:"Karataş Bulvarı",nh:0,note:"Kaburga ve kaburga kıyması. Şalgam ve ayranla.",eat:"Kaburga, kaburga kıyması, şalgam, ayran",ll:[36.9650,35.3850],ap:1});
+// Tatlı, içecek, ara öğün
+P({c:"ada",n:"Kazım Büfe",cat:"yemek",s:"t",d:0.5,k:1,se:"iysk",w:"scaf",ar:"Cemalpaşa",nh:0,note:"Muzlu süt ve yengen tostu ile bilinen büfe. Toros Caddesi üzerinde.",eat:"Muzlu süt, yengen tostu, şalgam",ll:[36.9960,35.3190],ap:1});
+P({c:"ada",n:"Kuruköprü Şalgam ve Vişnecisi",cat:"yemek",s:"t",d:0.5,k:1,se:"iysk",w:"scaf",ar:"Kuruköprü",nh:0,note:"Şalgam, vişne suyu ve limon-vişne karışımı. Poğaça ya da simitle.",eat:"Şalgam, vişne suyu, limon-vişne karışımı, poğaça, simit",ll:[36.9980,35.3270],ap:1});
+P({c:"ada",n:"Helvanın Mucidi Hacı Ahmet Şahin",cat:"yemek",s:"t",d:0.5,k:1,se:"iysk",w:"scaf",ar:"Kurtuluş",nh:0,note:"Helva, cezerye ve lokum. Hediyelik almak için iyi bir durak.",eat:"Helva, cezerye, lokum, tahin, pekmez",ll:[36.9920,35.3200],ap:1});
+P({c:"ada",n:"Ağaçaltı Tatlıcısı",cat:"yemek",s:"t",d:0.5,k:1,se:"iysk",w:"scaf",ar:"Yüreğir",nh:1,note:"Tulumba tatlısı. Yüreğir’de, yerel halkın bildiği bir tatlıcı.",eat:"Tulumba tatlısı",ll:[36.9780,35.3700],ap:1});
+// Gezilecek yerler
+P({c:"ada",n:"Taşköprü ve Seyhan Nehri Kıyısı",cat:"tarih,huzur",s:"mae",d:1,k:0,se:"iysk",w:"scaf",ar:"Seyhan Nehri",nh:0,note:"Seyhan Nehri üzerindeki Roma dönemi köprüsü. Akşam ışıklandırmasıyla güzel, nehir kenarında yürünebilir.",ll:[36.9857,35.3226],ap:1});
+P({c:"ada",n:"Büyük Saat Kulesi ve Çarşı",cat:"tarih",s:"ma",d:1.5,k:0,se:"iysk",w:"scaf",ar:"Büyüksaat",nh:0,note:"Kentin simgesi saat kulesi ve çevresindeki eski çarşı. Dar sokaklarda esnaf dükkânları.",ll:[36.9895,35.3265],ap:1});
+P({c:"ada",n:"Adana Ulu Camii",cat:"tarih",s:"ma",d:1,k:0,se:"iysk",w:"scaf",ar:"Ulucami",nh:0,note:"Ramazanoğulları döneminden kalma külliye. Çinili mihrap ve avlusu için.",ll:[36.9850,35.3308]});
+P({c:"ada",n:"Yağ Camii",cat:"tarih",s:"ma",d:1,k:0,se:"iysk",w:"scaf",ar:"Ulucami",nh:1,note:"Eski bir kilise yapısından camiye dönüştürülmüş yapı. Ulu Camii ile aynı turda.",ll:[36.9855,35.3290],ap:1});
+P({c:"ada",n:"Sabancı Merkez Camii",cat:"tarih,huzur",s:"ma",d:1,k:0,se:"iysk",w:"scaf",ar:"Seyhan Nehri",nh:0,note:"Seyhan Nehri kıyısında büyük cami. Kentin en bilinen silueti.",ll:[36.9833,35.3172],ap:1});
+P({c:"ada",n:"Adana Arkeoloji Müzesi",cat:"tarih,sanat",s:"ma",d:2,k:1,se:"iysk",w:"scaf",ar:"Seyhan Nehri",nh:0,note:"Bölgeden çıkan Hitit ve Roma dönemi eserleri. Yaz sıcağında kapalı bir mekân olarak iyi.",ll:[36.9870,35.3210],ap:1});
+P({c:"ada",n:"Seyhan Baraj Gölü",cat:"doga,huzur",s:"ae",d:2,k:0,se:"iysk",w:"scaf",ar:"Seyhan Barajı",nh:0,note:"Kentin kuzeyinde baraj gölü. Gün batımında yürüyüş ve çay molası için.",ll:[37.0400,35.3319]});
+P({c:"ada",n:"Misis (Mopsuestia) Antik Kenti",cat:"tarih,sanat",s:"ma",d:2,k:1,se:"iysk",w:"scaf",ar:"Misis",nh:1,note:"Ceyhan Nehri kıyısında antik kent. Mozaikleriyle bilinir. Kent merkezinden araçla yarım saat kadar.",ll:[36.9578,35.6239]});
+P({c:"ada",n:"Kozan Kalesi",cat:"tarih,doga",s:"m",d:2,k:1,se:"iysk",w:"scaf",ar:"Kozan",nh:1,note:"Kozan’ın üstünde yükselen ortaçağ kalesi. Kent merkezinden araçla bir saat.",ll:[37.4417,35.8097]});
+P({c:"ada",n:"Anavarza (Anazarbus) Antik Kenti",cat:"tarih",s:"m",d:3,k:1,se:"iy",w:"scaf",ar:"Anavarza",nh:1,note:"Geniş ova üzerinde kalan Roma ve Bizans dönemi kent. Yazın aşırı sıcak, ilkbahar ve sonbaharda gidin.",ll:[37.2639,35.9056]});
+P({c:"ada",n:"Yumurtalık",cat:"doga,huzur",s:"ma",d:3,k:1,se:"iysk",w:"scaf",ar:"Yumurtalık",nh:1,note:"Akdeniz kıyısında küçük bir ilçe. Ayas Kalesi, sahil ve balıkçı barınağı.",ll:[36.7678,35.7922]});
+
+// EK YERLER. Çoğunun konumu mahalle/bölge düzeyinde (ap:1). Çalışma saatleri için gitmeden önce kontrol edin.
+// KAPADOKYA
+P({c:"cap",n:"Paşabağ (Rahipler Vadisi)",cat:"doga,tarih",s:"ma",d:1,k:1,se:"iysk",w:"scaf",ar:"Zelve",nh:0,note:"Üç başlı peribacaları ve Aziz Simeon’un kayaya oyulmuş yaşam alanı. Zelve ile aynı güne sığar.",ll:[38.6786,34.8933],ap:1});
+P({c:"cap",n:"Devrent Vadisi",cat:"doga,huzur",s:"ma",d:1,k:0,se:"iysk",w:"scaf",ar:"Avanos yolu",nh:1,note:"Deve, yunus ve kuş şeklini andıran kayalar. Kalabalık tur otobüsleri az uğrar.",ll:[38.6811,34.9086],ap:1});
+P({c:"cap",n:"Ortahisar Kalesi",cat:"tarih,doga",s:"ma",d:1,k:1,se:"iysk",w:"scaf",ar:"Ortahisar",nh:0,note:"Kayaya oyulmuş kale. Tepeden Kapadokya’nın geniş manzarası görünür.",ll:[38.6256,34.8553],ap:1});
+P({c:"cap",n:"Üç Güzeller Peribacaları",cat:"doga",s:"ae",d:1,k:0,se:"iysk",w:"scaf",ar:"Ürgüp",nh:0,note:"Yolun hemen kenarında üç büyük peribacası. Kısa bir mola ve fotoğraf durağı.",ll:[38.6372,34.9231],ap:1});
+P({c:"cap",n:"Temenni Tepesi Gün Batımı",cat:"doga,huzur",s:"e",d:1,k:0,se:"iysk",w:"scaf",ar:"Ürgüp",nh:1,note:"Ürgüp ve çevresini tepeden izlemek için sakin bir nokta.",ll:[38.6290,34.9115],ap:1});
+P({c:"cap",n:"Göreme Seyir Tepesi Gün Batımı",cat:"doga,huzur",s:"e",d:1,k:0,se:"iysk",w:"scaf",ar:"Göreme",nh:0,note:"Göreme’yi ve vadileri tepeden gören yürüyüş mesafesinde bir nokta.",ll:[38.6425,34.8345],ap:1});
+P({c:"cap",n:"Avanos Saç Müzesi",cat:"sanat",s:"ma",d:1,k:1,se:"iysk",w:"scaf",ar:"Avanos",nh:1,note:"Mağara içinde ziyaretçilerin bıraktığı saç tutamlarıyla dolu garip bir müze. Çömlek atölyeleriyle aynı rotaya alınır.",ll:[38.7168,34.8460],ap:1});
+P({c:"cap",n:"Sema Gösterisi (Saruhan Kervansarayı)",cat:"sanat,tarih",s:"e",d:1.5,k:2,se:"iysk",w:"scaf",ar:"Ürgüp–Avanos yolu",nh:0,note:"Selçuklu kervansarayında Mevlevi ayini. Gösteri günlerini önceden öğrenin.",ll:[38.6787,34.9101],ap:1});
+P({c:"cap",n:"Selime Manastırı",cat:"tarih,doga",s:"ma",d:2,k:1,se:"iysk",w:"scaf",ar:"Ihlara yakını",nh:1,note:"Kayaya oyulmuş büyük manastır ve kilise. Ihlara ile aynı güne sığar.",ll:[38.2744,34.2672],ap:1});
+P({c:"cap",n:"Güzelyurt (Gelveri) Rum Evleri",cat:"tarih,huzur",s:"ma",d:1.5,k:0,se:"iysk",w:"scaf",ar:"Güzelyurt",nh:1,note:"Taş evleri ve yeraltı yapılarıyla kalabalıksız bir kasaba. Ihlara yolu üzerinde.",ll:[38.2833,34.3667],ap:1});
+// TRABZON
+P({c:"trb",n:"Trabzon Kalesi (Ortahisar)",cat:"tarih",s:"ma",d:1,k:0,se:"iysk",w:"scaf",ar:"Ortahisar",nh:0,note:"Eski şehrin üst kesiminde kale surları. Vadiyi ve şehri yukarıdan gösterir.",ll:[41.0000,39.7280],ap:1});
+P({c:"trb",n:"Fatih Camii (Ortahisar)",cat:"tarih",s:"ma",d:0.75,k:0,se:"iysk",w:"scaf",ar:"Ortahisar",nh:0,note:"Eski bir Bizans kilisesinden camiye çevrilen yapı. Kale ile yan yana gezilir.",ll:[41.0008,39.7236],ap:1});
+P({c:"trb",n:"Vazelon Manastırı",cat:"tarih,doga",s:"m",d:2,k:1,se:"iysk",w:"saf",ar:"Maçka",nh:1,note:"Sümela’nın daha sakin akrabası. Yamaca kurulmuş manastır, orman içinde kısa yürüyüş.",ll:[40.7800,39.5700],ap:1});
+// MERSİN
+P({c:"mer",n:"Uzunçarşı ve Mersin Çarşısı",cat:"yemek,sanat",s:"ma",d:1.5,k:1,se:"iysk",w:"scaf",ar:"Merkez",nh:0,note:"Eski Mersin’in dar sokakları, tuhafiyeciler ve küçük esnaf dükkânları.",ll:[36.7990,34.6320],ap:1});
+P({c:"mer",n:"Mersin Ulu Camii",cat:"tarih",s:"ma",d:0.5,k:0,se:"iysk",w:"scaf",ar:"Merkez",nh:0,note:"Şehrin eski çarşı bölgesindeki merkezi cami.",ll:[36.7992,34.6340],ap:1});
+P({c:"mer",n:"Cennet Obruğu",cat:"doga,macera",s:"ma",d:1.5,k:1,se:"iysk",w:"scaf",ar:"Silifke",nh:1,note:"Yüzlerce basamaklı iniş ve mağaranın içindeki küçük kilise. Çıkış yorucu olabilir.",ll:[36.4500,34.0900],ap:1});
+P({c:"mer",n:"Cehennem Obruğu",cat:"doga",s:"ma",d:0.5,k:1,se:"iysk",w:"sac",ar:"Silifke",nh:1,note:"Yukarıdan bakılan devasa çukur. Korkuluklu platformdan izlenir. Cennet ile aynı yerde.",ll:[36.4470,34.0880],ap:1});
+P({c:"mer",n:"Tarsus Şelalesi",cat:"doga,huzur",s:"ma",d:1.5,k:1,se:"iysk",w:"scaf",ar:"Tarsus",nh:0,note:"Şehrin içinden geçen nehrin şelalesi, çevresinde çay bahçeleri.",ll:[37.0120,34.8800],ap:1});
+P({c:"mer",n:"Limonlu Kanyonu",cat:"doga,macera",s:"ma",d:2,k:1,se:"iysk",w:"saf",ar:"Erdemli",nh:1,note:"Erdemli yakınında nehir kanyonu. Yürüyüş ve kısa piknik molası.",ll:[36.6090,34.3260],ap:1});
+// ADANA
+P({c:"ada",n:"Adana Etnografya Müzesi",cat:"tarih,sanat",s:"ma",d:1,k:1,se:"iysk",w:"scaf",ar:"Merkez",nh:0,note:"Eski bir kiliseden müzeye çevrilen yapıda Çukurova geleneklerine ait eşyalar.",ll:[36.9891,35.3268],ap:1});
+P({c:"ada",n:"Tepebağ Höyüğü ve Tepebağ Evleri",cat:"tarih,huzur",s:"ma",d:1.5,k:0,se:"iysk",w:"scaf",ar:"Merkez",nh:1,note:"Höyük üstünde eski Adana evleri. Gün batımına doğru yürüyüş için hoş.",ll:[36.9904,35.3300],ap:1});
+P({c:"ada",n:"Seyhan Nehri Tekne Gezisi",cat:"doga,huzur",s:"ae",d:1,k:1,se:"iysk",w:"scaf",ar:"Seyhan",nh:0,note:"Nehir kıyısından kısa tekne turu. Havaya göre saatleri değişir.",ll:[36.9960,35.3190],ap:1});
+P({c:"ada",n:"Akyatan Lagünü Kuş Gözlemi",cat:"doga",s:"m",d:3,k:0,se:"iysk",w:"scaf",ar:"Karataş",nh:1,note:"Göç mevsiminde flamingo ve kıyı kuşları. Dürbün getirin, yol uzun.",ll:[36.6500,35.2500],ap:1});
+P({c:"ada",n:"Karataş Sahili",cat:"doga,huzur",s:"a",d:2.5,k:0,se:"iys",w:"scaf",ar:"Karataş",nh:0,note:"Şehre yakın sakin bir kıyı. Güneş batarken çay içilir.",ll:[36.5700,35.3800],ap:1});
+// KONYA
+P({c:"kon",n:"Sema Gösterisi (Mevlana Kültür Merkezi)",cat:"sanat,tarih",s:"e",d:1.5,k:1,se:"iysk",w:"scaf",ar:"Mevlana",nh:0,note:"Mevlevi ayininin sahne gösterisi. Gün ve saatleri güncel takvimden kontrol edin.",ll:[37.8632,32.4875],ap:1});
+P({c:"kon",n:"Selimiye Camii",cat:"tarih",s:"ma",d:0.75,k:0,se:"iysk",w:"scaf",ar:"Mevlana",nh:0,note:"Mevlana Müzesi’nin hemen yanında, kısa bir ziyaretlik.",ll:[37.8712,32.4860],ap:1});
+P({c:"kon",n:"Aziziye Camii",cat:"tarih",s:"ma",d:0.5,k:0,se:"iysk",w:"scaf",ar:"Merkez",nh:0,note:"Şehir merkezinde hareketli bir çarşı bölgesi içinde.",ll:[37.8730,32.4930],ap:1});
+// ANTALYA
+P({c:"ant",n:"Karaalioğlu Parkı ve Falezler",cat:"doga,huzur",s:"ae",d:1.5,k:0,se:"iysk",w:"scaf",ar:"Kaleiçi",nh:0,note:"Denize bakan falezlerde yürüyüş. Gün batımı için güzel bir nokta.",ll:[36.8830,30.6900],ap:1});
+P({c:"ant",n:"Mermerli Plajı",cat:"doga,huzur",s:"a",d:2,k:1,se:"yis",w:"scaf",ar:"Kaleiçi",nh:1,note:"Kaleiçi’nin dibindeki küçük kayalık koy. Kalabalıktan uzak yüzmek isteyenlere.",ll:[36.8800,30.7050],ap:1});
+P({c:"ant",n:"Kaleiçi Müzesi (Suna-İnan Kıraç)",cat:"sanat,tarih",s:"ma",d:1,k:1,se:"iysk",w:"scaf",ar:"Kaleiçi",nh:0,note:"Restore edilmiş eski bir Kaleiçi evi. Antalya’nın yerel yaşamına dair küçük bir bölüm.",ll:[36.8860,30.7060],ap:1});
+P({c:"ant",n:"Olympos Teleferik (Tahtalı Dağı)",cat:"macera,doga",s:"ma",d:3,k:2,se:"iysk",w:"scaf",ar:"Kemer",nh:0,note:"Deniz seviyesinden yüksek dağ başına teleferik. Yanınıza mutlaka mont alın.",ll:[36.5333,30.4333],ap:1});
+P({c:"ant",n:"Göynük Kanyonu",cat:"doga,macera",s:"ma",d:2.5,k:1,se:"iys",w:"saf",ar:"Kemer",nh:1,note:"Kemer yakınında kısa kanyon yürüyüşü. Yaz sıcağında serinletir.",ll:[36.6600,30.5600],ap:1});
+P({c:"ant",n:"Alanya Kalesi",cat:"tarih,doga",s:"ma",d:2.5,k:2,se:"iysk",w:"scaf",ar:"Alanya",nh:0,note:"Deniz üstüne kurulu geniş kale ve Selçuklu tersanesi. Antalya’dan uzak, bütün gün ayırın.",ll:[36.5322,32.0000],ap:1});
+// İZMİR
+P({c:"izm",n:"Konak Saat Kulesi",cat:"tarih",s:"ma",d:0.5,k:0,se:"iysk",w:"scaf",ar:"Konak",nh:0,note:"Şehrin simgesi. Çevrede çay ve simit molası verilir.",ll:[38.4189,27.1287]});
+P({c:"izm",n:"Kızlarağası Hanı",cat:"tarih,yemek",s:"ma",d:1,k:1,se:"iysk",w:"scaf",ar:"Kemeraltı",nh:0,note:"Kemeraltı içinde 18. yüzyıldan kalma han. Avluda çay içilir, el sanatı dükkânları var.",ll:[38.4180,27.1330],ap:1});
+P({c:"izm",n:"Kadifekale",cat:"tarih,doga",s:"ae",d:1.5,k:0,se:"iysk",w:"scaf",ar:"Kadifekale",nh:0,note:"İzmir Körfezi’ni tepeden izlemek için en çok tercih edilen nokta, gün batımı için güzel.",ll:[38.4130,27.1470],ap:1});
+P({c:"izm",n:"Eski Smyrna (Bayraklı Höyüğü)",cat:"tarih",s:"m",d:1.5,k:0,se:"iysk",w:"saf",ar:"Bayraklı",nh:1,note:"İzmir’in ilk kurulduğu yer. Bayraklı’da kazı alanı.",ll:[38.4620,27.1750],ap:1});
+P({c:"izm",n:"Kültürpark",cat:"huzur,sanat",s:"ma",d:1.5,k:0,se:"iysk",w:"scaf",ar:"Alsancak",nh:0,note:"Şehrin ortasında büyük park. Yürüyüş ve çay molası için.",ll:[38.4310,27.1470],ap:1});
+P({c:"izm",n:"Çeşme Ilıca Plajı",cat:"doga,huzur",s:"a",d:3,k:1,se:"yis",w:"scaf",ar:"Çeşme",nh:0,note:"Çeşme’nin en bilinen sahillerinden. Yaz aylarında kalabalıktır.",ll:[38.3150,26.3550],ap:1});
+P({c:"izm",n:"Alaçatı Ot Festivali",cat:"yemek,sanat",s:"ma",d:3,k:1,se:"i",w:"scaf",ar:"Alaçatı",nh:1,note:"Nisan ayında yapılan ot yemekleri ve zeytinyağı tadı. Tarihlerini belediyeden doğrulayın.",ll:[38.2833,26.3750],mon:[4],ap:1});
+
+/* Tarihçe kutuları. Anahtar = yerin adı. Kısa, genel bilgi; tarih ve sayılar için gitmeden önce resmî kaynaktan doğrulayın. */
+const INFO = {
+"Ayasofya ve Sultanahmet Meydanı":"İmparator I. Justinianus döneminde 532–537 arasında inşa edildi. Mimarları Anthemios ve Isidoros’tur. 1453’te fetihten sonra camiye çevrildi, 1935’te müze oldu, 2020’de yeniden cami olarak ibadete açıldı. Sultanahmet Meydanı, Bizans’ın at yarışı alanı olan Hipodrom’un yerindedir. Meydandaki Mısır Dikilitaşı Roma döneminde buraya getirildi.",
+"Topkapı Sarayı ve Harem":"Fatih Sultan Mehmet, İstanbul’u aldıktan sonra 1460’lı yıllarda yaptırdı. Yaklaşık dört yüzyıl Osmanlı padişahlarının yönetim ve yaşam merkezi oldu. Harem, sarayın padişah ailesinin yaşadığı özel bölümüdür. Padişahlar 19. yüzyılda Dolmabahçe’ye taşındı.",
+"Yerebatan Sarnıcı":"Bizans’ın I. Justinianus döneminde, 6. yüzyılda şehrin su ihtiyacı için yapılan yer altı deposudur. Yüzün üzerinde sütunla taşınan salonun iki sütun altlığında Medusa başları vardır. Osmanlı döneminde uzun süre unutuldu, sonra yeniden keşfedildi.",
+"Kapalıçarşı ve Mısır Çarşısı":"Kapalıçarşı’nın ilk çekirdeği Fatih Sultan Mehmet döneminde 15. yüzyılda kuruldu ve zamanla birçok sokağa yayıldı. Mısır Çarşısı, Yeni Camii külliyesinin bir parçası olarak 17. yüzyılda yapıldı. Adını Mısır’dan gelen baharat ve ürünlerden alır.",
+"Süleymaniye Camii ve Zeyrek":"Kanuni Sultan Süleyman adına Mimar Sinan tarafından 1550–1557 arasında yapıldı. Sinan’ın “kalfalık eserim” dediği yapılar arasında sayılır. Cami, medrese, hamam ve aşevinden oluşan büyük bir külliyedir. Kanuni ve eşi Hürrem Sultan’ın türbeleri bahçesindedir.",
+"Sahaflar Çarşısı":"Beyazıt Camii’nin yanında, yüzyıllardır kitap ve el yazması ticaretiyle bilinen küçük avlu çarşısıdır. Eski yazma, gravür ve nadir basımlar burada satılır.",
+"Fener–Balat Sokakları":"Fener, Rum Ortodoks Patrikhanesi’nin bulunduğu mahalledir. Balat ise uzun süre Yahudi, Rum ve Ermeni cemaatlerinin birlikte yaşadığı bir semttir. Dik sokaklarda renkli evler ve eski kiliseler bir arada durur.",
+"Galata Kulesi ve Karaköy":"Cenevizliler tarafından 1348’de, kendi mahallelerinin surlarının en yüksek noktası olarak yapıldı. Yüzyıllar boyunca gözetleme ve yangın kulesi olarak kullanıldı. Bugün tepesinden Haliç, Boğaz ve tarihî yarımada görülür.",
+"İstanbul Modern":"2004’te açıldı. Türkiye’nin modern ve çağdaş sanatına ayrılmış ilk büyük müzesi olarak anılır. Karaköy’deki yeni binasıyla Boğaz kıyısında hizmet verir.",
+"Pera Müzesi ve İstiklal Caddesi":"Pera Müzesi, Suna ve İnan Kıraç Vakfı tarafından 2005’te açıldı, 19. yüzyıl sonunda yapılmış eski bir otel binasındadır. Osman Hamdi Bey’in resimleri, Kütahya çinileri ve ağırlık ölçüleri koleksiyonlarıyla bilinir. İstiklal Caddesi, Osmanlı’nın Avrupalı yerleşimi olan Pera’nın ana yoludur.",
+"Rahmi M. Koç Müzesi":"Sanayi, ulaşım ve iletişim tarihine ayrılmış bir müzedir. Haliç kıyısında, eski bir Osmanlı tersane binasında yer alır ve 1994’te açıldı. Deniz araçları, eski otomobiller ve makineler sergilenir.",
+"Dolmabahçe Sarayı":"Sultan Abdülmecid tarafından 1843–1856 arasında yaptırıldı ve Avrupa tarzıyla Osmanlı’da yeni bir dönemi simgeler. Padişahlar Topkapı’dan sonra burada yaşadı. Atatürk 10 Kasım 1938’de bu sarayda vefat etti.",
+"Rumeli Hisarı ve Bebek":"Fatih Sultan Mehmet, İstanbul’u almadan önce Boğaz’ı kontrol etmek için 1452’de yaklaşık dört ayda yaptırdı. Karşı kıyıdaki Anadolu Hisarı ile birlikte Boğaz’ın en dar yerini denetliyordu. Bebek, hisarın kuzeyindeki Boğaz mahallesidir.",
+"Kız Kulesi ve Üsküdar Sahili":"Kule, Boğaz’ın girişindeki küçük bir adada, çok eski dönemlerden beri deniz yolunu gözetlemek için kullanıldı. Bugünkü yapı 19. yüzyılın başında II. Mahmud döneminde yenilendi. Adına ilişkin birçok halk efsanesi vardır.",
+"Kuzguncuk Mahalle Yürüyüşü":"Kuzguncuk, Rum, Ermeni, Yahudi ve Müslüman ailelerin yan yana yaşadığı eski bir Boğaz mahallesidir. Aynı sokaklarda cami, kilise ve sinagog birbirine yakın durur.",
+"Mevlana Müzesi":"Mevlana Celaleddin-i Rumi, 1273’te Konya’da vefat etti. Türbesi Selçuklu döneminde yapıldı, çevresi Mevlevi dergâhı olarak büyüdü. 1927’de müzeye çevrildi. Yeşil çinili kubbesi şehrin simgesidir.",
+"Şeb-i Arus Anma Törenleri":"“Düğün gecesi” anlamına gelen Şeb-i Arus, Mevlana’nın ölüm yıldönümünde yapılır. Mevlevilere göre ölüm, sevgiliye kavuşmadır. Törenler Aralık ayında yapılır, tarihleri her yıl programdan doğrulanmalıdır.",
+"Alaaddin Tepesi ve Camii":"Alaaddin Tepesi, Selçukluların başkenti Konya’nın yönetim merkeziydi. Alaaddin Camii, Anadolu Selçuklu döneminde 12.–13. yüzyıllarda yapıldı ve sonradan eklerle genişledi. Selçuklu sultanları burada gömülüdür.",
+"Karatay Medresesi (Çini Eserleri Müzesi)":"1251’de Selçuklu veziri Celaleddin Karatay tarafından yaptırıldı. Kubbesindeki lacivert, turkuaz ve siyah çinileriyle bilinir. Bugün Selçuklu ve Osmanlı çini eserlerinin sergilendiği müzedir.",
+"İnce Minare (Taş ve Ahşap Eserleri Müzesi)":"Selçuklu döneminde 13. yüzyılın ortasında yapıldı. Taştan oyma kapısı Anadolu Selçuklu taş işçiliğinin en güzel örneklerinden sayılır. Minarenin üst kısmı sonradan yıldırım düşmesiyle yıkıldı. Medrese bugün müzedir.",
+"Sille Köyü":"Konya’nın yakınındaki Sille, 1923 mübadelesine kadar Rum nüfusun yaşadığı bir köydü. Aya Eleni Kilisesi, geleneğe göre Roma İmparatoru Konstantin’in annesi Helena tarafından yaptırılmıştır. Kayaya oyulmuş mağara evleri vardır.",
+"Çatalhöyük":"Yaklaşık 9.000 yıl öncesine, Neolitik Çağ’a dayanan yerleşimdir. Evlere damdan merdivenle girilir, sokak yoktur. 2012’de UNESCO Dünya Mirası Listesi’ne alındı.",
+"Sema Gösterisi (Mevlana Kültür Merkezi)":"Mevlevi sema ayini, Mevlana’nın izinden giden dervişlerin dönerek yaptığı bir ibadettir. 2008’de UNESCO’nun Somut Olmayan Kültürel Miras listesine girdi. Gösteri günleri ve saatleri değişir, güncel programa bakılmalıdır.",
+"Selimiye Camii":"Selimiye Camii, şehzade iken Konya’da bulunan II. Selim tarafından 16. yüzyıl ortasında yaptırıldı. Mevlana Müzesi’nin hemen yanında yer alır.",
+"Göreme Açık Hava Müzesi":"Bizans döneminde kaya içine oyulmuş manastır ve kiliselerden oluşur. Duvarlarındaki freskler 10.–13. yüzyıllara tarihlenir. Karanlık Kilise gibi yapılar renkleriyle ünlüdür. UNESCO Dünya Mirası alanıdır.",
+"Uçhisar Kalesi":"Kapadokya’nın en yüksek noktalarından biri olan doğal kaya kütlesinin içi, yüzyıllar boyunca odalar ve geçitlerle oyuldu. Tehlike zamanında bölge halkına sığınak oldu.",
+"Zelve Açık Hava Müzesi":"Zelve, vadilerindeki kaya evleri ve kiliseleriyle yüzyıllar boyunca yerleşim gördü. Kaya düşme riski yüzünden 1950’lerde halk yakındaki yeni köye taşındı. Bugün eski vadi gezilebilen açık hava müzesidir.",
+"Çavuşin Eski Köy":"Çavuşin’de eski kaya evler ve kiliseler, yüksek kayalıklara oyulmuş olarak durur. Eski köy, kaya düşme riski nedeniyle terk edildi.",
+"Avanos Çömlek Atölyesi":"Avanos, Kızılırmak’ın getirdiği kırmızı çamurla yüzyıllardır çömlek yapılan bir kasabadır. Atölyelerde çömlekçi çarkı başında ustalar çalışır.",
+"Derinkuyu Yeraltı Şehri":"Yer altına çok katlı inen büyük bir şehirdir. Bizans döneminde tehlike anlarında halkın saklandığı yer olarak kullanıldığı düşünülür. Havalandırma bacaları, ahırlar, kilise ve yuvarlak taş kapılar vardır.",
+"Kaymaklı Yeraltı Şehri":"Derinkuyu’na benzer bir yeraltı şehridir. Dar geçitler, havalandırma bacaları ve yuvarlak taş kapılarla korunuyordu. Bölgede yüzün üstünde yeraltı yerleşimi olduğu söylenir.",
+"Ihlara Vadisi Yürüyüşü":"Hasan Dağı’ndan çıkan volkanik malzemeyi Melendiz Çayı derin bir vadi haline getirdi. Vadi kenarlarında Bizans döneminde oyulmuş onlarca kaya kilisesi bulunur. Vadi yaklaşık 14 km uzunluğundadır.",
+"Mustafapaşa Rum Evleri":"Eski adı Sinasos olan köy, 1924 mübadelesine kadar Rum nüfusun yaşadığı yerleşimdi. Taş işçiliğiyle yapılmış zengin evler ve kiliseler bugün de görülebilir.",
+"Hacıbektaş Veli Anma Törenleri":"13. yüzyılda Anadolu’da yaşayan Hacı Bektaş Veli’yi anmak için her yıl Ağustos ortasında Nevşehir’in Hacıbektaş ilçesinde düzenlenir. Tarihler her yıl programdan doğrulanmalıdır.",
+"Paşabağ (Rahipler Vadisi)":"Üç başlı, mantar biçimli peribacalarıyla bilinir. Bir kayanın içinde, Hristiyan münzevi Aziz Simeon’un yaşadığı kabul edilen oda vardır.",
+"Ortahisar Kalesi":"Ortahisar, kayanın kendisinin kale gibi oyulmasıyla oluşan bir yerleşimdir. İçinde odalar ve geçitler bulunur. Yüzyıllardır sığınak ve depo olarak kullanılmıştır.",
+"Sema Gösterisi (Saruhan Kervansarayı)":"Saruhan Kervansarayı, Anadolu Selçuklu döneminde 1249’da yapıldı. İpek Yolu’ndaki tüccarlara hizmet ediyordu. Bugün Mevlevi sema gösterileri burada yapılır.",
+"Selime Manastırı":"Kayaya oyulmuş büyük bir manastır ve kilise kompleksidir. Bizans dönemine ait kaya mimarisi örneği olarak bilinir, Ihlara’ya yakındır.",
+"Güzelyurt (Gelveri) Rum Evleri":"Eski adı Gelveri olan kasaba, 1924 mübadelesine kadar Rum nüfusun yaşadığı yerdi. Taş evleri, kiliseleri ve yeraltı yapılarıyla bilinir.",
+"Kemeraltı Çarşısı":"Kemeraltı, İzmir’in Osmanlı döneminden beri ticaret merkezi olan çarşısıdır. Sokaklarında hanlar, camiler ve küçük zanaat dükkânları bir arada bulunur.",
+"Agora Açık Hava Müzesi":"Antik Smyrna’nın çarşı ve toplanma alanıdır. Bugünkü kalıntıların büyük kısmı, 2. yüzyıldaki depremden sonra Roma İmparatoru Marcus Aurelius döneminde yeniden yapılan haline aittir.",
+"İzmir Arkeoloji Müzesi":"İzmir ve çevresindeki antik yerleşimlerden çıkan heykel, seramik ve küçük buluntuları sergiler.",
+"Tarihi Asansör":"1907’de iş insanı Nesim Levi Bayraklıoğlu tarafından yaptırıldı. Dik yamaçtaki Karataş’ı alttaki sokağa bağlar. Bugün tepesindeki çay bahçesinden körfez manzarası izlenir.",
+"Sığacık Kalesi ve Teos":"Sığacık Kalesi, korsan saldırılarına karşı 16. yüzyılda yapıldı. Yakındaki Teos, Antik Çağ’ın Dionysos kentidir; şair Anakreon’un yaşadığı yer olarak bilinir.",
+"Çeşme Kalesi":"Çeşme Kalesi, 16. yüzyıl başında II. Bayezid döneminde yaptırıldı. İçindeki yapılar müze olarak gezilir.",
+"Efes Antik Kenti":"Efes, Antik Çağ’ın en büyük kentlerinden biriydi. Celsus Kütüphanesi 2. yüzyılda yapıldı, tiyatrosu yaklaşık 25.000 kişilik büyüklüğündedir. Yakınındaki Artemis Tapınağı Antik Dünya’nın Yedi Harikası arasında sayılırdı. UNESCO Dünya Mirası Listesi’ne 2015’te girdi.",
+"Aziz Yuhanna Bazilikası ve Ayasuluk Tepesi":"6. yüzyılda I. Justinianus döneminde, Hristiyan geleneğine göre Aziz Yuhanna’nın mezarı olduğu kabul edilen yere yapıldı. Yanındaki tepede Ayasuluk Kalesi bulunur.",
+"Şirince Köyü":"Şirince, 1923 mübadelesine kadar Rum nüfusun yaşadığı bir köydü. Taş evleri ve şarapçılığıyla bilinir.",
+"Bergama Akropolü":"Bergama, Helenistik dönemde krallığın başkentiydi (MÖ 3.–2. yüzyıl). Dik yamaca kurulmuş tiyatro, kütüphane ve tapınak kalıntıları vardır. Ünlü Zeus Sunağı bugün Berlin’deki müzede sergilenir. UNESCO Dünya Mirası Listesi’ne 2014’te alındı.",
+"Konak Saat Kulesi":"1901’de II. Abdülhamid’in tahta çıkışının 25. yılı anısına yapıldı. Mimarı Levanten Raymond Charles Père’dir. İzmir’in simgesi sayılır.",
+"Kızlarağası Hanı":"1744’te Kızlarağası Hacı Beşir Ağa tarafından yaptırıldı. Kemeraltı’nın en iyi korunmuş hanlarından biridir. Avluda bugün çay ve el sanatı dükkânları vardır.",
+"Kadifekale":"Antik adı Pagos olan tepede Helenistik dönemde kale yapıldı. Tepe, İzmir Körfezi’ne hâkim konumundadır.",
+"Eski Smyrna (Bayraklı Höyüğü)":"İzmir’in ilk kurulduğu yerdir. Bayraklı’daki kazılarda Bronz Çağı’ndan itibaren yerleşim izleri bulunmuştur.",
+"Kültürpark":"1936’da İzmir Enternasyonal Fuarı ile birlikte açıldı. Eskiden Rum ve Ermeni mahallelerinin bulunduğu yangın alanı üzerine kuruldu.",
+"Kaleiçi ve Hadrian Kapısı":"Antalya, MÖ 2. yüzyılda Bergama Kralı II. Attalos tarafından kuruldu. Kaleiçi, bu eski şehrin yerleşimidir. Hadrian Kapısı, 130 yılında İmparator Hadrianus’un ziyareti onuruna yapıldı.",
+"Antalya Müzesi":"Antalya Müzesi, bölgedeki antik kentlerden çıkan eserleri sergiler. Perge’den çıkan heykeller en önemli bölümlerinden biridir.",
+"Perge Antik Kenti":"Perge, Pamfilya bölgesinin önemli kentlerinden biriydi. Roma döneminde sütunlu caddesi, tiyatrosu ve stadyumu ile gelişti. Kalıntıları bugün hâlâ iyi görülür.",
+"Aspendos Antik Tiyatrosu":"2. yüzyılda Roma İmparatoru Marcus Aurelius döneminde, mimar Zenon tarafından yapıldı. Dünyanın en iyi korunmuş Roma tiyatrolarından biri sayılır. Bugün konserlere ev sahipliği yapar.",
+"Side Antik Kenti":"Side, Pamfilya kıyısında eski bir liman kentiydi. Apollon Tapınağı denize bakar. Roma tiyatrosu ve sütunlu caddesi bugün gezilebilir.",
+"Olympos Antik Kenti":"Olympos, Likya kentlerinden biriydi. Deniz kıyısındaki vadide ormanla iç içe duran kalıntıları vardır. Yakınındaki Yanartaş, binlerce yıldır kesintisiz yanan doğal gaz alevleriyle bilinir.",
+"Phaselis Antik Kenti":"Phaselis, Rodoslu yerleşimciler tarafından yaklaşık MÖ 700’de kuruldu. Üç ayrı limanı vardır. Çam ormanı içinde kıyıya yakın duran kalıntılarıyla bilinir.",
+"Termessos":"Pisidia’nın yüksek dağ kenti olan Termessos, 1.000 metrenin üzerindeki bir yamaçtadır. Rivayete göre Büyük İskender kenti MÖ 333’te alamadı. Kalıntıları ormanla çevrilidir.",
+"Kekova ve Batık Şehir Tekne Turu":"Kekova, Antik Çağ’ın Likya kıyı yerleşimlerinden birini barındırır. Deprem ve zamanla deniz seviyesinin yükselmesi sonucu yapıların bir kısmı su altında kaldı.",
+"Patara Plajı ve Antik Kenti":"Patara, Likya Birliği’nin önemli kentlerinden biriydi. Aziz Nikolaos’un (Noel Baba’nın) buralı olduğu söylenir. Uzun kumsalı, deniz kaplumbağalarının yuva yaptığı yerdir.",
+"Alanya Kalesi":"Alanya Kalesi, Anadolu Selçuklu Sultanı I. Alaaddin Keykubad döneminde 13. yüzyılda büyük ölçüde yeniden yapıldı. Kızıl Kule 1226’da yapıldı. Selçuklu tersanesi bugün de görülebilir.",
+"Sümela Manastırı":"Rivayete göre MS 4. yüzyılda kuruldu, 13. yüzyıl ve sonrasında genişledi. Karadeniz’in Rum Ortodoks topluluğu için önemli bir merkezdi. Dik bir kayalığa oturur. Manastırdaki yaşam 1923 mübadelesinde sona erdi.",
+"Trabzon Ayasofyası":"Trabzon İmparatorluğu döneminde 13. yüzyılda (yaklaşık 1238–1263) yapıldı. Fetihten sonra cami olarak kullanıldı, bugün müzedir. Duvarlarında fresk kalıntıları vardır.",
+"Atatürk Köşkü":"Rum bankacı Kostaki Teofilaktos’un 19. yüzyıl sonunda yaptırdığı konaktır. Atatürk Trabzon’a geldiğinde burada kaldığı için bu adı taşır.",
+"Trabzon Müzesi (Kostaki Köşkü)":"Rum bankacı Kostaki Teofilaktos’un 20. yüzyıl başında yaptırdığı konak bugün Trabzon Müzesi’dir. Avrupa mimarisiyle yerel yapı geleneğinin karışımıdır.",
+"Uzun Sokak ve Taş Han":"Uzun Sokak, Trabzon’un çarşı bölgesinde yüzyıllardır ticaretin geçtiği ana yoldur. Çevresinde eski hanlar bulunur.",
+"Gülbahar Hatun Külliyesi":"Yavuz Sultan Selim’in annesi Gülbahar Hatun adına 1514’te yaptırılan külliyedir. Cami, medrese ve türbeyi bir arada barındırır.",
+"Trabzon Kalesi (Ortahisar)":"Trabzon’un eski şehir surları, Bizans ve Trabzon İmparatorluğu döneminin ortaçağ kalıntılarıdır. Üç tarafı vadilerle çevrili bir yarımadada durur.",
+"Fatih Camii (Ortahisar)":"Bizans döneminde Panagia Hrisokefalos Kilisesi idi. Osmanlı’nın fethinden sonra, 1461’de Fatih Sultan Mehmet zamanında camiye çevrildi.",
+"Vazelon Manastırı":"Karadeniz’in Rum Ortodoks manastırlarından biridir. Sümela’ya benzer biçimde sarp bir yamaca yerleşmiştir. Manastır hayatı 1923’te sona erdi.",
+"Aziz Pavlus Kuyusu ve Anıt Müzesi":"Tarsus, Hristiyanlığın yayılmasında rol oynayan Aziz Pavlus’un doğduğu şehirdir. Kuyu, geleneğe göre onun evinin yakınında bulunmuş olup bölgenin kutsal yerlerinden sayılır.",
+"Kleopatra Kapısı":"Tarsus’un eski şehir surlarının kapılarından biridir. Roma döneminden kalır. MÖ 41’de Kleopatra’nın Antonius ile Tarsus’ta buluştuğuna dair anlatım nedeniyle bu adla anılır.",
+"Kızkalesi":"Kıyıdaki kale ve denizdeki küçük adada bir diğer kale vardır. Deniz kalesi 12. yüzyıl Bizans dönemine tarihlenir. Halk anlatılarına göre bir kralın kızı yılan sokması ile ölür ve bu yüzden “Kızkalesi” denir.",
+"Ayaş (Elaiussa Sebaste)":"Roma ve Bizans döneminde önemli bir liman kentiydi. Kıyıdaki kalıntıları arasında tiyatro, liman yapıları ve mozaikli yapı vardır.",
+"Kanlıdivane Antik Kenti":"Antik adı Kanytelis’tir. Dev bir doğal çukurun çevresine kurulmuş eski bir Kilikya kentidir. Adının kökeni halk anlatılarına dayanır.",
+"Narlıkuyu":"Narlıkuyu’da Roma dönemi hamam kalıntısında “Üç Güzeller” mozaiği bulunur. Mozaik 4. yüzyıla tarihlenir. Yakındaki balık restoranlarıyla da bilinir.",
+"Uzuncaburç (Diokaisareia)":"Uzuncaburç, Helenistik ve Roma döneminde önemli bir Kilikya kentiydi. Zeus Olbios Tapınağı yaklaşık MÖ 3. yüzyıla tarihlenir. Kalıntılar arasında yüksek bir kule de görülür.",
+"Alahan Manastırı":"5. yüzyılda yapılmış erken Hristiyanlık dönemine ait bir manastır kompleksidir. Dağın yamacında kiliseleri ve kaya mezarlarıyla bilinir.",
+"Mamure Kalesi":"Anamur kıyısında, ortaçağdan kalma büyük bir sahil kalesidir. Anamur’un simgesi sayılır.",
+"Taşköprü ve Seyhan Nehri Kıyısı":"Taşköprü, Roma döneminde yapılmış ve sonradan onarılmış bir köprüdür. İlk hâlinde 21 gözlüydü, bugün bir kısmı ayaktadır. Yaklaşık iki bin yıldır Seyhan Nehri üzerinde kullanılır.",
+"Büyük Saat Kulesi ve Çarşı":"Adana Saat Kulesi, 19. yüzyılın sonunda Vali Abidin Paşa döneminde yapıldı. Çevresindeki çarşı bölgesinde kebapçılar ve esnaf dükkânları bulunur.",
+"Adana Ulu Camii":"Ramazanoğlu Halil Bey tarafından başlatılan cami, 1541’de oğlu Piri Mehmet Paşa döneminde tamamlandı. Selçuklu, Memlük ve Osmanlı etkilerini bir arada taşır.",
+"Yağ Camii":"Önceden kilise olan yapı, Osmanlı döneminde camiye çevrildi. Çarşı bölgesinin yakınında, eski Adana’nın merkezinde yer alır.",
+"Sabancı Merkez Camii":"1998’de açıldı. Türkiye’nin en büyük camilerinden biridir. Altı minareli yapı Seyhan Nehri kıyısında yer alır.",
+"Adana Arkeoloji Müzesi":"Çukurova’nın Kilikya bölgesine ait eserleri sergiler. Hitit ve Roma dönemi eserleri arasında heykeller ve mozaikler öne çıkar.",
+"Misis (Mopsuestia) Antik Kenti":"Roma ve Bizans döneminde önemli bir Kilikya kentiydi. Ceyhan Nehri üzerindeki köprü ve Misis Mozaik Müzesi bilinir. Mozaikler arasında Nuh Tufanı betimi vardır.",
+"Kozan Kalesi":"Kozan’ın eski adı Sis’tir. Kale, 13.–14. yüzyıllarda Kilikya Ermeni Krallığı’nın başkenti ve önemli bir merkezi olarak büyük ölçüde yapıldı. Dik bir kaya sırtında uzar.",
+"Anavarza (Anazarbus) Antik Kenti":"Anazarbus, Roma ve Bizans döneminde Kilikya’nın önemli kentlerinden biriydi. Ortaçağda Kilikya Ermeni Krallığı’nın da elinde kaldı. Şehir surları, su kemeri ve kale bugün de görülebilir.",
+"Tepebağ Höyüğü ve Tepebağ Evleri":"Adana’nın en eski yerleşim alanlarından biri olan höyükte, eski Adana evleri sonradan onarılarak korunmuştur.",
+"Mersin Müzesi":"Mersin ve çevresindeki Kilikya yerleşimlerinden çıkan arkeolojik ve etnografik eserleri sergiler."
+};
+
+/* Gezme ipuçları. Genel tavsiyedir; saat, bilet ve kapalı gün bilgisi için gitmeden önce resmî kaynağa bakın. */
+const TIPS = {
+"Ayasofya ve Sultanahmet Meydanı":"Sabah erken saatlerde daha sakin olur. Cami olarak ibadete açık olduğu için omuz ve dizleri örten giysi giyin, kadınlar için başörtüsü gerekebilir. Aynı bölgede Yerebatan Sarnıcı ve Topkapı’yı da planlayın.",
+"Topkapı Sarayı ve Harem":"Saray büyüktür, Harem bölümü ayrı bilet isteyebilir. En az üç saat ayırın. Kapalı olduğu günü önceden kontrol edin.",
+"Yerebatan Sarnıcı":"Serin ve nemlidir, yürüyüş yolu ıslak olabilir. Öğle saatlerinde kuyruk uzar, sabah ya da akşama doğru gidin.",
+"Kapalıçarşı ve Mısır Çarşısı":"Fiyat sorup pazarlık edin. Kapalıçarşı pazar günleri kapalı olur. Kalabalıkta cüzdanınıza dikkat edin.",
+"Süleymaniye Camii ve Zeyrek":"Namaz vakitlerinde ziyarete kapanabilir. Avlunun arkasındaki teras Haliç manzarası için güzeldir. Ardından Zeyrek’e inip çay molası verebilirsiniz.",
+"Sahaflar Çarşısı":"Kapalıçarşı’ya yürüme mesafesinde olduğu için birlikte planlanır. Eski kitaplarda fiyat sorun, ciltli eski basımlarda pazarlık edilir.",
+"Fener–Balat Sokakları":"Sokaklar dik ve taş döşemelidir, rahat ayakkabı giyin. Hafta içi sabah daha sakindir. Kiliseler ve sinagogların ziyaret saatlerini önceden öğrenin.",
+"Galata Kulesi ve Karaköy":"Gün batımında en yoğun saatidir. Sakin bir ziyaret için açılış saatine yakın gidin. Çevredeki sokaklarda kafe ve galeriler vardır.",
+"İstanbul Modern":"Müze günleri ve saatleri değişebilir, önceden bakın. Boğaz kıyısında çay ya da kahve molası için güzel bir yerdir.",
+"Pera Müzesi ve İstiklal Caddesi":"İstiklal Caddesi akşamları çok kalabalıktır. Müzeyi gündüz gezin. Tramvayla Tünel’den Taksim’e kadar yürüyebilirsiniz.",
+"Rahmi M. Koç Müzesi":"Çocuklu aileler için özellikle uygundur. Eserlere dokunmanın serbest olduğu bölümler vardır. Hafta sonu kalabalıktır.",
+"Dolmabahçe Sarayı":"Rehberli tur zorunlu olabilir, bilet ve kuyruk için erken gidin. İçeride fotoğraf yasağı olabilir. Kapalı olduğu günü kontrol edin.",
+"Rumeli Hisarı ve Bebek":"Hisarın burçlarına çıkarken merdivenler dik olabilir. Bebek’te sahil boyunca yürüyüp çay içebilirsiniz.",
+"Kız Kulesi ve Üsküdar Sahili":"Kuleye tekne ile gidilir, saatleri ve bilet bilgisini önceden öğrenin. Üsküdar sahili gün batımında güzeldir.",
+"Kuzguncuk Mahalle Yürüyüşü":"Hafta içi sakindir. Sokaklar dar ve eğimlidir. Sahilde ve küçük kafelerde mola verin.",
+"Mevlana Müzesi":"Hafta sonları ve tatillerde kuyruk uzar, sabah erken gidin. Çevresi cami olarak kullanıldığı için uygun giyinin. Türbede sessiz olun.",
+"Şeb-i Arus Anma Törenleri":"Aralık ayında şehir kalabalık olur, konaklamayı önceden ayarlayın. Etkinlik programı ve bilet için resmî kaynağa bakın.",
+"Alaaddin Tepesi ve Camii":"Tepe gün batımında güzel manzara verir. Cami namaz vakitlerinde ziyarete kapalı olabilir.",
+"Karatay Medresesi (Çini Eserleri Müzesi)":"Kubbedeki çinileri yukarıdan izlemek için dik bakın. Küçük bir müzedir, bir saat yeter. Mevlana Müzesi ile aynı güne alınır.",
+"İnce Minare (Taş ve Ahşap Eserleri Müzesi)":"Taş kapısını yakından inceleyin. Karatay Medresesi ve Alaaddin Tepesi’ne yürüyerek gidilir.",
+"Sille Köyü":"Şehir merkezinden minibüs veya taksiyle gidilir. Kayalık yollarda rahat ayakkabı giyin. Köyde gölgelik az olabilir, yazın şapka ve su alın.",
+"Çatalhöyük":"Şehirden araçla yaklaşık bir saatlik yoldur. Açık alanda gölge az olduğu için yazın sabah gidin. Kapalı olduğu günü ve ziyaret saatlerini önceden kontrol edin.",
+"Sema Gösterisi (Mevlana Kültür Merkezi)":"Gösteri gün ve saatlerini önceden öğrenin. Gösteri sırasında fotoğraf ve alkış kuralları olabilir, görevlilerin yönlendirmesine uyun.",
+"Selimiye Camii":"Mevlana Müzesi’ne bitişik olduğu için birlikte gezilir. Namaz vakitlerinde ziyaret uygun olmayabilir.",
+"Göreme Açık Hava Müzesi":"Sabah ilk saatlerde ya da öğleden sonra daha sakindir. Zemin kayalık ve eğimlidir, rahat ayakkabı giyin. Karanlık Kilise ayrı bilet isteyebilir.",
+"Uçhisar Kalesi":"Tepeye çıkış merdivenlidir. Gün batımında manzarası güzeldir ama kalabalıklaşır. Rüzgârlı havalarda yukarıda dikkatli olun.",
+"Zelve Açık Hava Müzesi":"Kaya düşme riski olan bölümleri güvenlik nedeniyle kapalı olabilir, işaretlere uyun. Paşabağ ve Çavuşin ile birlikte gezilir.",
+"Çavuşin Eski Köy":"Kayalık yamaçta merdivenler dik olabilir. Küçük kilisesi için ek giriş ücreti istenebilir. Aydınlık için sabah ya da öğleden sonra gidin.",
+"Avanos Çömlek Atölyesi":"Birçok atölyede çarkta çömlek yapmayı deneyebilirsiniz. Satın almadan önce fiyatı sorun. Rüzgârsız bir günde nehir kenarında yürüyüş de güzeldir.",
+"Derinkuyu Yeraltı Şehri":"Geçitler alçak ve dardır, tavana dikkat edin. Klostrofobi varsa uygun değildir. İçerisi serindir, yazın bile hırka alın.",
+"Kaymaklı Yeraltı Şehri":"Geçitler dardır ve bazı bölümlerde eğilerek yürünür. İçi serin ve nemlidir. Derinkuyu ile aynı günde gezilebilir, ikisinden birini seçmek de yeterlidir.",
+"Ihlara Vadisi Yürüyüşü":"Merdivenle vadiye inilir, dönüşte çıkış yorucu olabilir. Yazın sabah gidin, yanınıza su alın. Vadi boyunca yürüyüş yolu uzundur, istediğiniz bölümde dönebilirsiniz.",
+"Mustafapaşa Rum Evleri":"Sokaklar sakindir ve yürünür. Köy küçüktür, bir saat yeter. Ürgüp’e yakın olduğu için dönüşte uğranır.",
+"Hacıbektaş Veli Anma Törenleri":"Ağustos ortasında yapılır, konaklama önceden doldurulur. Tarihleri resmî duyurulardan öğrenin.",
+"Paşabağ (Rahipler Vadisi)":"Kısa bir duraktır, yarım saat yeter. Zelve ile aynı güzergâhtadır. Gün batımına yakın ışık fotoğraf için güzeldir.",
+"Ortahisar Kalesi":"Yukarı çıkış merdivenlidir. Manzara için gün batımına yakın gidin. Çevredeki kafelerde mola verilebilir.",
+"Sema Gösterisi (Saruhan Kervansarayı)":"Gösteri günleri ve saatleri sabit değildir, önceden öğrenin. Gösterinin sessiz izlenmesi beklenir.",
+"Selime Manastırı":"Zeminler taşlıdır ve bazı bölümler dik olabilir. Ihlara Vadisi ile aynı güzergâhtadır.",
+"Güzelyurt (Gelveri) Rum Evleri":"Kasaba sakindir, bir saat yeter. Ihlara yolunun üzerinde olduğu için dönüşte uğranır.",
+"Kemeraltı Çarşısı":"Kuşluk saatinden öğleye kadar canlıdır. Yürüyüş uzundur, rahat ayakkabı giyin. Pazar günleri bazı dükkânlar kapalı olur. Dükkânlarda fiyatı sorup pazarlık edin.",
+"Agora Açık Hava Müzesi":"Gölge azdır, yazın sabah gidin. Kısa bir ziyarettir. Kemeraltı’na yakındır.",
+"İzmir Arkeoloji Müzesi":"Kapalı olduğu günü önceden kontrol edin. Efes ve Bergama öncesi ön hazırlık olarak gezilebilir.",
+"Tarihi Asansör":"Asansörle yukarı çıkıp çay bahçesinde manzara izleyin. Gün batımında kalabalıklaşır. Çevresindeki sokaklar dik olduğu için yürüyüş ayakkabısı giyin.",
+"Sığacık Kalesi ve Teos":"Sığacık’ta kale içi küçük bir yerleşimdir, bir saat yeter. Teos için araç ya da taksi gerekir. Yazın öğlen güneşinden kaçının.",
+"Çeşme Kalesi":"Kale küçük bir müzedir. Çeşme’de sahil yürüyüşü ve rıhtımla birlikte yarım gün planlanabilir.",
+"Efes Antik Kenti":"Çok az gölge vardır, yazın sabah erken gidin veya ilkbahar ve sonbaharı tercih edin. Su, şapka ve rahat ayakkabı alın. Ziyaret için en az iki, üç saat ayırın. Kruvaziyer günlerinde kalabalık artar.",
+"Aziz Yuhanna Bazilikası ve Ayasuluk Tepesi":"Efes’e çok yakındır, aynı günde gezilir. Tepeye çıkış kısa ama eğimlidir. Gün batımına yakın manzarası güzel olur.",
+"Şirince Köyü":"Hafta sonu çok kalabalıktır. Sabah erken gidin. Şarap tadımı yapılırsa şoför ya da dolmuş kullanın.",
+"Bergama Akropolü":"Akropol yüksek bir tepededir, teleferik ya da yürüyüş yolu kullanılır. Yazın sabah gidin. Asklepion’u da aynı gün planlayabilirsiniz.",
+"Konak Saat Kulesi":"Kısa bir duraktır. Çevresinde simit ve çay satan seyyar satıcılar vardır. Kemeraltı’na yürüyerek gidilir.",
+"Kızlarağası Hanı":"Hafta içi sabah sakindir. El sanatı dükkânları pazarlığa açıktır. Avluda çay molası verebilirsiniz.",
+"Kadifekale":"Gün batımı için en çok tercih edilir, akşam karanlığında dönüş yolunu önceden planlayın. Şehir merkezinden minibüs ya da taksiyle çıkılır.",
+"Eski Smyrna (Bayraklı Höyüğü)":"Küçük bir kazı alanıdır. Gitmeden önce ziyarete açık olup olmadığını öğrenin.",
+"Kültürpark":"Hafta sonu kalabalık olur. Fuar zamanlarında park içinde etkinlikler yapılır. Bir saatlik yürüyüş için uygundur.",
+"Kaleiçi ve Hadrian Kapısı":"Sokaklar dar ve taş döşemelidir, rahat ayakkabı giyin. Yaz akşamları kalabalıktır. Gün ışığında gezmek için sabah erken gidin.",
+"Antalya Müzesi":"Perge’den çıkan heykeller burada sergilendiği için Perge’den önce ya da sonra gezilebilir. Kapalı olduğu günü kontrol edin. Klimalıdır, öğle sıcağında iyi bir moladır.",
+"Perge Antik Kenti":"Yazın sabah erken gidin, çünkü gölge azdır. Şapka, su ve rahat ayakkabı alın. Aspendos ile aynı günde gezilebilir.",
+"Aspendos Antik Tiyatrosu":"Tiyatronun üst basamaklarından manzara güzeldir. Akşam konserleri için ayrı bilet gerekir. Yazın öğlen sıcağından kaçının.",
+"Side Antik Kenti":"Side’de antik kent ile modern turizm bölgesi iç içedir. Gün batımında Apollon Tapınağı güzel görünür. Manavgat Şelalesi ile aynı güzergâhtadır.",
+"Olympos Antik Kenti":"Giriş ücreti ve plaj bir arada olabilir, yaz aylarında kalabalıktır. Orman içi yol kaygan olabilir, rahat ayakkabı giyin. Yanartaş için gece gitmek daha etkilidir.",
+"Phaselis Antik Kenti":"Yazın denize girip antik kenti gezmek için en güzel yerlerden biridir. Gölge olduğu için sıcakta bile rahat gezilir. Plaj için havlu alın.",
+"Termessos":"Yol dik ve taşlıdır, ciddi bir yürüyüş gerektirir. Yanınıza bol su ve rahat ayakkabı alın. Yazın sabah gidin.",
+"Kekova ve Batık Şehir Tekne Turu":"Tekne turu havaya göre iptal olabilir. Yazın tur öncesi şapka ve su alın. Batık yapılar için sakin denizli bir gün seçin.",
+"Patara Plajı ve Antik Kenti":"Kumsal çok uzundur, gölge azdır. Şemsiye ya da şapka alın. Kaplumbağa üreme mevsiminde gece plaja girişte kısıtlama olabilir.",
+"Alanya Kalesi":"Yaz sıcağında yukarı çıkış zordur, sabah ya da akşama doğru gidin. Kaleye araçla ya da yürüyerek çıkılır. Gün batımı manzarası güzeldir.",
+"Sümela Manastırı":"Sarp yamaçta uzun yürüyüş gerekir, rahat ayakkabı giyin. Sis ya da yağmur olabilir, yedek giysi alın. Yol ve giriş durumunu önceden öğrenin. Sabah erken gidilirse kalabalık az olur.",
+"Trabzon Ayasofyası":"Küçük bir yapıdır, bir saat yeter. Denize bakan bahçesinde çay içilebilir. Kapalı olduğu günü kontrol edin.",
+"Atatürk Köşkü":"Yükseltide olduğu için şehre geniş bir manzarası vardır. Bahçesinde gezilir. Hafta içi sakindir. Kapalı olduğu günü kontrol edin.",
+"Trabzon Müzesi (Kostaki Köşkü)":"Ahşap iç mekânı ve bahçesiyle bir saatte gezilir. Kapalı olduğu günü kontrol edin.",
+"Uzun Sokak ve Taş Han":"Hafta içi gündüz canlıdır. Esnaf dükkânlarında Trabzon’a özgü ürünleri bulabilirsiniz. Yürüyüşle birlikte çay ya da pastane molası verin.",
+"Gülbahar Hatun Külliyesi":"Külliye ve türbe küçüktür, yarım saat yeter. Namaz vakitlerinde cami bölümü kapalı olabilir.",
+"Trabzon Kalesi (Ortahisar)":"Kale yürüyüşü yokuşludur. Gün batımında manzara güzeldir. Vadinin kenarındaki yollarda dikkatli yürüyün.",
+"Fatih Camii (Ortahisar)":"Namaz vakitlerinde ziyaret uygun olmayabilir. Trabzon Kalesi ile aynı güzergâhtadır.",
+"Vazelon Manastırı":"Yol zordur ve araç gerektirir. Sümela’ya göre çok daha sakindir. Hava durumuna bakın, sis ve yağmurda patika kayganlaşır.",
+"Aziz Pavlus Kuyusu ve Anıt Müzesi":"Kısa bir duraktır. Tarsus’un diğer tarihî yerleriyle birlikte yarım günde gezilir. Kapalı olduğu günü kontrol edin.",
+"Kleopatra Kapısı":"Kısa bir durak, çevresi çarşı içindedir. Tarsus merkezinde yürüyerek diğer yerlerle birleştirin.",
+"Kızkalesi":"Denizdeki kaleye yüzmek ya da tekneyle gidilebilir. Yazın öğle sıcağında kıyıdaki kaleyi gezmeyin. Gün batımı manzarası güzeldir.",
+"Ayaş (Elaiussa Sebaste)":"Kıyıda geniş bir alana yayılmıştır, gölge azdır. Kızkalesi ile aynı güzergâhtadır.",
+"Kanlıdivane Antik Kenti":"Çukurun kenarında dikkatli yürüyün, özellikle çocuklarla. Zemin düzensiz ve taşlıdır. Yazın sabah gidin.",
+"Narlıkuyu":"Mozaik küçük bir müzede sergilenir, yarım saat yeter. Çevredeki balık lokantalarında yemek yenir. Cennet ve Cehennem Obruğu ile aynı güzergâhtadır.",
+"Uzuncaburç (Diokaisareia)":"Alan geniştir ve gölge azdır. Silifke’den araçla yaklaşık yarım saatlik yoldur. Yazın sabah gidin.",
+"Alahan Manastırı":"Dağ yolundadır, araç gerektirir. Yazın serindir ama rüzgârlı olabilir. Silifke ve Mut güzergâhına eklenir.",
+"Mamure Kalesi":"Kıyıdaki kalenin dışı ve çevresi de yürünebilir. Anamur’a uzak olduğu için tam bir gün planlayın. Yazın öğle sıcağından kaçının.",
+"Taşköprü ve Seyhan Nehri Kıyısı":"Akşam saatlerinde nehir kıyısı canlı ve serindir. Yazın gün batımından sonra yürüyün.",
+"Büyük Saat Kulesi ve Çarşı":"Sabah ya da akşam daha az sıcaktır. Çarşıda kebapçı ve şalgamcıları da deneyin. Kule çevresinde yürüyerek dolaşılır.",
+"Adana Ulu Camii":"Namaz vakitlerinde ziyaret uygun olmayabilir. Çevresindeki çarşı ile yürüyerek birleştirin.",
+"Yağ Camii":"Namaz vakitlerinde ziyaret uygun olmayabilir. Ulu Camii ve Saat Kulesi ile aynı güzergâhtadır.",
+"Sabancı Merkez Camii":"Büyük bir yapıdır, namaz vakitlerinde ziyaret uygun olmayabilir. Nehir kıyısında gün batımını izlemek için uygundur.",
+"Adana Arkeoloji Müzesi":"Klimalıdır, yazın öğle sıcağında iyi bir moladır. Kapalı olduğu günü kontrol edin. Misis ve Anavarza öncesi okumak için güzeldir.",
+"Misis (Mopsuestia) Antik Kenti":"Mozaik müzesi küçüktür. Şehir dışında olduğu için araç gerekir. Yazın sabah gidin.",
+"Kozan Kalesi":"Kale yamaca kurulu, yol ve çıkış dik olabilir. Yazın çok sıcaktır, sabah gidin. Şehirden araç gerekir.",
+"Anavarza (Anazarbus) Antik Kenti":"Alan çok geniş ve gölgesizdir. Yazın uygun değildir, ilkbahar ya da sonbaharı tercih edin. Araç gerekir.",
+"Tepebağ Höyüğü ve Tepebağ Evleri":"Gün batımına doğru yürüyüş için güzeldir. Evleri dışarıdan görmek yeterlidir. Çevresindeki kafelerde mola verin.",
+"Mersin Müzesi":"Kapalı olduğu günü kontrol edin. Küçük bir müzedir, bir saat yeter."
+};
+
+(function () {
+  const $ = (s) => document.querySelector(s);
+  const esc = (s) => String(s).replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
+  const KEY = "rota-defteri-v2";
+  const z = (n) => String(n).padStart(2, "0");
+  const iso = (d) => d.getFullYear() + "-" + z(d.getMonth() + 1) + "-" + z(d.getDate());
+  const todayISO = iso(new Date());
+  const parse = (s) => new Date(s + "T12:00:00");
+  const num = (n, d) => n.toFixed(d).replace(".", ",");
+
+  let st = { city: "ist", days: 2, tempo: "dengeli", interests: ["tarih", "yemek"], date: todayISO, budget: 2, who: "c", niche: true, seed: 1 };
+  try {
+    const r = JSON.parse(localStorage.getItem(KEY) || "null");
+    if (r && CITIES[r.city]) { st = Object.assign(st, r); if (!st.date || st.date < todayISO) st.date = todayISO; }
+  } catch (e) {}
+
+  $("#f-city").innerHTML = Object.entries(CITIES).map(([k, c]) =>
+    `<label class="city"><input type="radio" name="city" value="${k}"><span class="sign brown"><strong>${c.name}</strong><small>${c.sub}</small></span></label>`).join("");
+  const seg = (id, name, obj) => { $(id).innerHTML = Object.entries(obj).map(([k, v]) => `<label><input type="radio" name="${name}" value="${k}"><span>${v}</span></label>`).join(""); };
+  $("#f-days").innerHTML = [1, 2, 3, 4, 5].map((n) => `<label><input type="radio" name="days" value="${n}"><span>${n}</span></label>`).join("");
+  seg("#f-tempo", "tempo", TEMPO);
+  seg("#f-budget", "budget", BUDGET);
+  seg("#f-who", "who", WHO);
+  $("#f-interests").innerHTML = Object.entries(CATS).map(([k, v]) => `<label class="chip"><input type="checkbox" name="interest" value="${k}"><span>${v}</span></label>`).join("");
+  const dateIn = $("#date");
+  dateIn.min = todayISO;
+  const maxD = new Date(); maxD.setFullYear(maxD.getFullYear() + 1); dateIn.max = iso(maxD);
+  const form = $("#form");
+
+  function writeForm() {
+    form.elements["city"].value = st.city;
+    form.elements["days"].value = String(st.days);
+    form.elements["tempo"].value = st.tempo;
+    form.elements["budget"].value = String(st.budget);
+    form.elements["who"].value = st.who;
+    dateIn.value = st.date;
+    $("#niche").checked = !!st.niche;
+    form.querySelectorAll('input[name="interest"]').forEach((i) => { i.checked = st.interests.includes(i.value); });
+  }
+  function readForm() {
+    const fd = new FormData(form);
+    return { city: fd.get("city"), days: +fd.get("days"), tempo: fd.get("tempo"), interests: fd.getAll("interest"), date: fd.get("date") || todayISO,
+      budget: +fd.get("budget"), who: fd.get("who"), niche: $("#niche").checked };
+  }
+  function save() { try { localStorage.setItem(KEY, JSON.stringify(st)); } catch (e) {} }
+
+  const fmt = (d, o) => d.toLocaleDateString("tr-TR", o);
+  const durText = (h) => (h < 1 ? "1 saatten kısa" : (h % 1 ? String(h).replace(".", ",") : h) + " saat");
+  const kmText = (km) => km < 1 ? Math.round(km * 10) * 100 / 10 + " m" : num(km, km < 10 ? 1 : 0) + " km";
+  const minText = (m) => m >= 60 ? Math.floor(m / 60) + " sa " + (m % 60 ? (m % 60) + " dk" : "") : m + " dk";
+  const legText = (l) => kmText(l.km) + " · " + minText(l.min) + " · " + l.mode;
+
+  /* gün haritası: ızgara, yol, numaralı pinler, mesafe etiketleri, ölçek ve kuzey oku */
+  const NARROW = window.matchMedia ? window.matchMedia("(max-width: 560px)") : { matches: false };
+  function buildMap(pts, narrow) {
+    const W = narrow ? 420 : 800, H = narrow ? 520 : 420, pl = narrow ? 44 : 70, pr = narrow ? 44 : 70, pt = 46, pb = 62;
+    const maxName = narrow ? 20 : 26;
+    const lats = pts.map((p) => p.ll[0]), lons = pts.map((p) => p.ll[1]);
+    const latMin = Math.min(...lats), latMax = Math.max(...lats), lonMin = Math.min(...lons), lonMax = Math.max(...lons);
+    const cos = Math.cos(((latMin + latMax) / 2) * Math.PI / 180);
+    const dxR = Math.max((lonMax - lonMin) * cos, 0.012), dyR = Math.max(latMax - latMin, 0.012);
+    const uw = W - pl - pr, uh = H - pt - pb;
+    const sc = Math.min(uw / dxR, uh / dyR);
+    const ox = pl + (uw - (lonMax - lonMin) * cos * sc) / 2, oy = pt + (uh - (latMax - latMin) * sc) / 2;
+    const P = pts.map((p) => ({ x: ox + (p.ll[1] - lonMin) * cos * sc, y: oy + (latMax - p.ll[0]) * sc, p }));
+    for (let i = 0; i < P.length; i++) for (let j = 0; j < i; j++) {
+      if (Math.hypot(P[i].x - P[j].x, P[i].y - P[j].y) < 17) { const a = i * 1.9; P[i].x += Math.cos(a) * 17; P[i].y += Math.sin(a) * 17; }
+    }
+    let g = "";
+    for (let x = 0; x <= W; x += 50) g += `<line class="m-grid" x1="${x}" y1="0" x2="${x}" y2="${H}"/>`;
+    for (let y = 0; y <= H; y += 50) g += `<line class="m-grid" x1="0" y1="${y}" x2="${W}" y2="${y}"/>`;
+    const path = P.map((q, i) => (i ? "L" : "M") + q.x.toFixed(1) + " " + q.y.toFixed(1)).join(" ");
+    let dist = "";
+    for (let i = 1; i < P.length; i++) {
+      const l = leg(P[i - 1].p.ll, P[i].p.ll);
+      const mx = (P[i - 1].x + P[i].x) / 2, my = (P[i - 1].y + P[i].y) / 2;
+      if (Math.hypot(P[i].x - P[i - 1].x, P[i].y - P[i - 1].y) > 60) dist += `<text class="m-dist" x="${mx.toFixed(1)}" y="${(my - 10).toFixed(1)}">${kmText(l.km)}</text>`;
+    }
+    const pins = P.map((q, i) => {
+      const right = q.x > W * 0.62;
+      const tx = q.x + (right ? -22 : 22), ty = q.y + (i % 2 ? 22 : -10);
+      const name = q.p.name.length > maxName ? q.p.name.slice(0, maxName - 1) + "…" : q.p.name;
+      return `<g class="mp" data-t="${q.p.sid}"><circle class="m-pin" cx="${q.x.toFixed(1)}" cy="${q.y.toFixed(1)}" r="14"/><text class="m-num" x="${q.x.toFixed(1)}" y="${q.y.toFixed(1)}">${i + 1}</text>` +
+        `<text class="m-lbl" x="${tx.toFixed(1)}" y="${ty.toFixed(1)}" text-anchor="${right ? "end" : "start"}">${esc(name)}</text></g>`;
+    }).join("");
+    const kmPerPx = 111.19 / sc;
+    let bar = 0.5; for (const b of [0.5, 1, 2, 5, 10, 20, 50, 100, 200]) { if (b / kmPerPx <= (narrow ? 110 : 150)) bar = b; }
+    const bw = bar / kmPerPx, bx = 26, by = H - 24;
+    const scale = `<path class="m-scale" d="M${bx} ${by - 6} V${by} H${bx + bw} V${by - 6}"/><text class="m-sc-t" x="${bx}" y="${by - 12}">${bar < 1 ? bar * 1000 + " m" : bar + " km"}</text>`;
+    const north = `<g transform="translate(${W - 34} 34)"><path class="m-na" d="M0 -16 L7 6 L0 2 L-7 6 Z"/><text class="m-n" y="22">K</text></g>`;
+    return `<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="Günün rota haritası">${g}<path class="m-road" d="${path}"/><path class="m-line" d="${path}"/>${dist}${pins}${scale}${north}</svg>`;
+  }
+
+  let lastText = "";
+  function render() {
+    save();
+    const city = CITIES[st.city];
+    const start = parse(st.date);
+    const plan = planTrip({ city: st.city, days: st.days, tempo: st.tempo, interests: new Set(st.interests), date: start, budget: st.budget, who: st.who, niche: st.niche, seed: st.seed });
+    const end = new Date(start); end.setDate(end.getDate() + st.days - 1);
+    const range = st.days === 1 ? fmt(start, { day: "numeric", month: "long" })
+      : start.getMonth() === end.getMonth() ? start.getDate() + "–" + fmt(end, { day: "numeric", month: "long" })
+      : fmt(start, { day: "numeric", month: "long" }) + " – " + fmt(end, { day: "numeric", month: "long" });
+
+    let html = `<header class="route-head">
+      <div class="sign blue"><span class="kicker">Rota hazır · ${range}</span><h2>${city.name} · ${st.days} gün</h2></div>
+      <ul class="facts"><li>${SEASONS[plan.season]}</li><li>${WHO[st.who]}</li><li>${BUDGET[st.budget]} bütçe</li><li>${TEMPO[st.tempo]} tempo</li>${
+        st.interests.length ? `<li>${st.interests.map((k) => CATS[k]).join(" · ")}</li>` : ""}</ul>
+      <p class="tip"><b>${SEASONS[plan.season]} notu.</b> ${esc(city.tips[plan.season])}</p>
+      <p class="transit"><b>Şehir içi ulaşım.</b> ${esc(city.transit)}</p>
+      ${plan.gaps ? `<p class="notice">Seçtiğin filtrelerle ${plan.gaps} zaman aralığı boş kaldı. Bütçeyi artırırsan, ilgi alanlarını azaltırsan ya da gün sayısını düşürürsen rota daha dolu çıkar.</p>` : ""}
+    </header>`;
+
+    const lines = [`Rota Defteri · ${city.name} · ${st.days} gün (${range})`, ""];
+    plan.days.forEach((day, i) => {
+      const d = new Date(start); d.setDate(d.getDate() + i);
+      const dateStr = fmt(d, { day: "numeric", month: "long", weekday: "long" });
+      const title = day.area || "Serbest gün";
+      const real = day.stops.filter((s) => !s.generic && !s.rest);
+      real.forEach((s, k) => { s.sid = "s" + i + "-" + k; });
+      const first = real[0];
+      const farKm = day.far && first ? hav(city.center, first.ll) : 0;
+      html += `<article class="day"><div class="day-head"><div class="sign green"><span class="day-no">Gün ${i + 1}</span><h3>${esc(title)}</h3></div>${
+        day.far ? `<span class="far-tag">Şehir dışı · merkezden ~${Math.round(farKm)} km</span>` : ""}<span class="day-date">${dateStr}</span></div>`;
+      if (real.length) html += `<div class="mapbox">${buildMap(real, NARROW.matches)}<p class="cap">Şematik rota haritası. Pinlere dokunursan ilgili durak kartına gidersin.</p></div>`;
+      html += `<ol class="stops">`;
+      lines.push(`GÜN ${i + 1} · ${title} · ${dateStr}`);
+      let n = 0, prev = null;
+      day.stops.forEach((s) => {
+        if (s.generic || s.rest) {
+          const txt = s.rest ? "Sabahki gezi yarım günden uzun sürdü. Öğleden sonrayı dinlenmeye ya da çevreyi keşfetmeye ayırın." : "Bu saat için seçtiğin filtrelere uygun yeni bir öneri kalmadı. Kendi keşfine bırak.";
+          const ttl = s.rest ? "Dinlenme ve serbest zaman" : "Serbest zaman";
+          html += `<li class="stop soft"><span class="pin">–</span><div class="card"><div class="card-top"><span class="time">${s.time}</span><span class="slot">${SLOTNAME[s.slot]}</span></div><h4>${ttl}</h4><p class="note">${txt}</p></div></li>`;
+          lines.push(`  ${s.time}  ${ttl}`);
+          return;
+        }
+        n++;
+        if (prev) {
+          const l = leg(prev.ll, s.ll);
+          html += `<li class="leg"><span></span><span class="leg-chip${l.km > 20 ? " far" : ""}">${legText(l)}</span></li>`;
+          lines.push(`      ↓ ${legText(l)}`);
+        }
+        const tags = s.cats.map((c) => `<span class="tag">${CATS[c]}</span>`).join("");
+        const badges = (s.niche ? `<span class="badge niche">Az bilinen</span>` : "") + (s.mon ? `<span class="badge event">Bu tarihe özel</span>` : "") + (s.ap ? `<span class="badge ap">konum yaklaşık</span>` : "");
+        html += `<li class="stop" id="${s.sid}"><span class="pin">${n}</span><div class="card">
+          <div class="card-top"><span class="time">${s.time}</span><span class="slot">${SLOTNAME[s.slot]}</span></div>
+          <h4>${esc(s.name)}</h4><p class="where">${esc(s.area)}</p>
+          <div class="meta">${tags}<span class="dur">${durText(s.dur)}</span><span>${COST[s.cost]}</span>${badges}</div>
+          ${s.eat ? `<p class="eat"><b>Menüden</b><span>${esc(s.eat)}</span></p>` : ""}
+          <p class="note">${esc(s.note)}</p>
+          ${INFO[s.name] ? `<details class="hist"><summary>Tarihçe ve ipuçları</summary><p>${esc(INFO[s.name])}</p>${TIPS[s.name] ? `<p class="tip"><b>Gezme ipucu</b>${esc(TIPS[s.name])}</p>` : ""}</details>` : ""}</div></li>`;
+        lines.push(`  ${s.time}  ${n}. ${s.name} (${s.area}; ${durText(s.dur)}, ${COST[s.cost]})`);
+        if (s.eat) lines.push(`         Menüden: ${s.eat}`);
+        lines.push(`         ${s.note}`);
+        prev = s;
+      });
+      html += `</ol></article>`;
+      lines.push("");
+    });
+    lines.push("Saatler ve ücretler değişebilir, gitmeden önce kontrol edin.");
+    lastText = lines.join("\n");
+    $("#route").innerHTML = html;
+  }
+
+  $("#route").addEventListener("click", (e) => {
+    const g = e.target.closest(".mp");
+    if (!g) return;
+    const el = document.getElementById(g.getAttribute("data-t"));
+    if (!el) return;
+    el.scrollIntoView({ block: "center", behavior: "smooth" });
+    el.classList.add("flash");
+    setTimeout(() => el.classList.remove("flash"), 1600);
+  });
+  form.addEventListener("change", () => { st = Object.assign(st, readForm()); $("#copyBox").hidden = true; render(); });
+  $("#shuffle").addEventListener("click", () => { st.seed += 1; $("#copyBox").hidden = true; setMsg("Rota yenilendi."); render(); });
+  $("#copy").addEventListener("click", () => {
+    const box = $("#copyBox");
+    const fallback = () => { box.value = lastText; box.hidden = false; box.focus(); box.select(); setMsg("Metin aşağıda seçili. Kopyalamak için Ctrl+C ya da uzun basın."); };
+    try { navigator.clipboard.writeText(lastText).then(() => { box.hidden = true; setMsg("Rota metni kopyalandı."); }, fallback); } catch (e) { fallback(); }
+  });
+  let mt;
+  function setMsg(t) { const m = $("#msg"); m.textContent = t; clearTimeout(mt); mt = setTimeout(() => { m.textContent = ""; }, 4000); }
+
+  if (NARROW.addEventListener) NARROW.addEventListener("change", render);
+  writeForm();
+  render();
+})();
+</script>
+
+</body></html>
